@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Find all .go files in the current directory and store them in a variable
+go_files=$(find . -maxdepth 1 -name "*.go")
+
+# Check if there are any .go files
+if [ -z "$go_files" ]; then
+    echo "No .go files found in the current directory."
+    exit 1
+fi
+
+# Run all .go files with any provided arguments
+echo "-------------------------- "
+echo "|--  Testing Zenforge  --| "
+echo "-------------------------- "
+go run $go_files $@
