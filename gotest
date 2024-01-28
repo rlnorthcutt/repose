@@ -1,16 +1,13 @@
 #!/bin/bash
 
-# Find all .go files in the current directory and store them in a variable
-go_files=$(find . -maxdepth 1 -name "*.go")
+# Get the directory where the script is located
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-# Check if there are any .go files
-if [ -z "$go_files" ]; then
-    echo "No .go files found in the current directory."
-    exit 1
-fi
+# Find all .go files in the script's directory, excluding *_test.go files
+go_files=$(find "$script_dir" -maxdepth 1 -name "*.go" ! -name "*_test.go")
 
 # Run all .go files with any provided arguments
 echo "-------------------------- "
 echo "|--  Testing Zenforge  --| "
 echo "-------------------------- "
-go run $go_files $@
+go run $go_files $@ 

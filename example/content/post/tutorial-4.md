@@ -15,6 +15,8 @@ template: "blog-post.tmpl"
 
 🧙🏾‍♂️: Writing a shell script to run all `.go` files in the current directory is a straightforward task. The script will use the `go run` command, which can compile and run Go programs. Typically, you would end the file in `.sh` to denote that it is a shell script. However, here we will skip that to make it simpler for testing purposes.
 
+Also, we want to exclude test files AND make sure that we can call this from other directories and have it _only_ aggregate the Go files in the directory it is in.
+
 Here's a simple script to achieve this:
 
 ### Shell Script: `gotest`
@@ -22,14 +24,11 @@ Here's a simple script to achieve this:
 ```bash
 #!/bin/bash
 
-# Find all .go files in the current directory and store them in a variable
-go_files=$(find . -maxdepth 1 -name "*.go")
+# Get the directory where the script is located
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-# Check if there are any .go files
-if [ -z "$go_files" ]; then
-    echo "No .go files found in the current directory."
-    exit 1
-fi
+# Find all .go files in the script's directory, excluding *_test.go files
+go_files=$(find "$script_dir" -maxdepth 1 -name "*.go" ! -name "*_test.go")
 
 # Run all .go files with any provided arguments
 echo "-------------------------- "

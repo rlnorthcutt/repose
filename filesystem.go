@@ -20,7 +20,6 @@ func (f *Filesystem) Create(path string, content string) error {
 	// Check if the path exists using checkPath
 	if f.pathExists(path) {
 		errorMessage := path + " already exists"
-		logger.Error(errorMessage)
 		return errors.New(errorMessage)
 	}
 

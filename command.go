@@ -4,6 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // Defining a new public type 'Command'
@@ -23,31 +28,32 @@ func (c *Command) Init() string {
 
 // Creates new content based on the provided content type and filename.
 // It requires two arguments: content type and filename.
-// If the required arguments are not provided, it prints the usage information.
+// The content type defines the path, so it can also include a subfolder
 func (c *Command) New() {
+	// If the required arguments are not provided, print the usage information.
 	if len(os.Args) != 4 {
 		logger.Info("Usage: zenforge new [CONTENTTYPE] [FILENAME]")
 		return
 	}
-	contentType := os.Args[2]
-	fileName := os.Args[3]
+	contentDirectory := config.ContentDirectory
+	typeDirectory := os.Args[2]
+	fileNameParam := os.Args[3]
+	fileName, title := processFileName(fileNameParam)
 
-	// Determine the path and content based on contentType
-	var path string
-	var content string
-
-	// Example: Customize path and content based on contentType
-	switch contentType {
-	case "file":
-		path = fileName // Assuming fileName includes the path
-		content = ""    // Default content for a new file
-	case "directory":
-		path = fileName // Directory path
-		content = ""    // No content needed for directory
-	default:
-		logger.Error("Unknown content type: %s", contentType)
-		return
+	// We allow the user to include a subdirectory in the content type param
+	// Extract the first part as the type if contentType has a '/'
+	var contentType string
+	if strings.Contains(contentType, "/") {
+		contentType = strings.Split(contentType, "/")[0]
+	} else {
+		contentType = typeDirectory
 	}
+
+	// Construct the path
+	path := filepath.Join(contentDirectory, typeDirectory, fileName)
+
+	// Get default content
+	content := defaultContent(contentType, title)
 
 	// Create the file or directory
 	if err := filesystem.Create(path, content); err != nil {
@@ -99,3 +105,47 @@ func (c *Command) Help() string {
 }
 
 // **********  Private Command Methods  **********
+
+func processFileName(fileName string) (string, string) {
+	// Check the file extension
+	ext := filepath.Ext(fileName)
+	if ext != ".md" && ext != ".html" {
+		// If no extension or any other extension, make it .md
+		fileName = fileName + ".md"
+		ext = ".md" // Update the extension to .md
+	}
+
+	fileNameWithoutExt := strings.TrimSuffix(fileName, ext)
+
+	// Convert fileName to a title
+	replaceWithSpaces := strings.Replace(strings.Replace(fileNameWithoutExt, "-", " ", -1), "_", " ", -1)
+	caser := cases.Title(language.English)
+	title := caser.String(replaceWithSpaces)
+
+	return fileName, title
+}
+
+// defaultContent returns default content based on the content type.
+func defaultContent(contentType string, title string) string {
+	content := `---
+title: "{title}"
+description: "{contentType} about {title}"
+tags: []
+image: 
+index: true
+author: "{author}"
+publish_date: 
+template: "{contentType}.tmpl"
+---
+	
+# {title}
+
+`
+
+	// Replace placeholders with actual values
+	content = strings.Replace(content, "{title}", title, -1)
+	content = strings.Replace(content, "{contentType}", contentType, -1)
+	content = strings.Replace(content, "{author}", config.Author, -1)
+
+	return content
+}
