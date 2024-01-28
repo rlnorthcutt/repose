@@ -96,9 +96,9 @@ func (c *Command) Help() string {
 	response := `ZenForge Commands:
     init  - Initialize a new ZenForge project
     new   - Create new content. Usage: zenforge new [CONTENTTYPE] [FILENAME]
-    demo  - Generate demo content
     build - Build the site. Options: -r [ROOT], -c [CONFIG]
     preview - Setup a local server to preview the site
+    demo  - Generate demo content
     help  - Show this help message\n`
 	logger.Info(response)
 	return ""
