@@ -39,5 +39,5 @@ func (l *Logger) Error(message string, value ...any) {
 func (l *Logger) Fatal(message string, value ...any) {
 	tag := "\u001B[0;31m[FATAL]\u001B[0;39m "
 	fmt.Printf(tag+message+"\n", value...)
-	os.Exit(0)
+	os.Exit(1)
 }

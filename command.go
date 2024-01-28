@@ -12,7 +12,7 @@ type Command int
 // Defining a global varaiable for Command
 var command Command
 
-// **********  Command functions  **********************************************
+// **********  Public Command Methods  **********
 
 // Initializes a new ZenForge project.
 // It creates the proper folder structure and starter files.
@@ -31,7 +31,31 @@ func (c *Command) New() {
 	}
 	contentType := os.Args[2]
 	fileName := os.Args[3]
-	fmt.Printf("Creating new %s with filename %s\n", contentType, fileName)
+
+	// Determine the path and content based on contentType
+	var path string
+	var content string
+
+	// Example: Customize path and content based on contentType
+	switch contentType {
+	case "file":
+		path = fileName // Assuming fileName includes the path
+		content = ""    // Default content for a new file
+	case "directory":
+		path = fileName // Directory path
+		content = ""    // No content needed for directory
+	default:
+		logger.Error("Unknown content type: %s", contentType)
+		return
+	}
+
+	// Create the file or directory
+	if err := filesystem.Create(path, content); err != nil {
+		logger.Error("Failed to create %s: %v", path, err)
+		return
+	}
+
+	fmt.Printf("Successfully created new %s: %s\n", contentType, path)
 }
 
 // Generates a new project with demo content and templates to create a new site.
@@ -73,3 +97,5 @@ func (c *Command) Help() string {
 	logger.Info(response)
 	return ""
 }
+
+// **********  Private Command Methods  **********
