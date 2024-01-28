@@ -63,36 +63,3 @@ Build options:
 
 
 
-Development Plan for ZenForge:
-Project Setup:
-Initialize a new Golang project.
-Set up a version control system (e.g., Git).
-Create the basic folder structure (config, content, template, web).
-Content Management:
-Develop functionality to create and manage content as Markdown (MD) files.
-Implement the directory structure for content that mirrors the site's routing.
-Content Processing:
-Code the logic to auto-generate listing pages for directories without an index.md.
-Parse header metadata in MD files for various attributes (title, description, tags, etc.).
-Template System:
-Implement the handling of Go templates (.tmpl files).
-Develop the system to process single file components (combining CSS, JS, and HTML).
-Template and MD Extensions:
-Enable templates to resolve to HTML5 with inline CSS/JS and to custom web elements.
-Extend Markdown formatting with custom components.
-Static File Generation:
-Code the functionality to generate static files and store them in the web directory.
-Configuration Management:
-Create a system to read and apply settings from a config.yml file.
-CLI Tool Development:
-Develop CLI commands (new, help, build, serve) with options for root directory and configuration file.
-Testing and Debugging:
-Implement testing frameworks and methodologies.
-Regularly test each component and the entire system for bugs and issues.
-Documentation and User Guides:
-Write comprehensive documentation covering setup, usage, and customization.
-Create user guides for different levels of users.
-Deployment and Distribution:
-Plan the distribution method (e.g., repository, packaging).
-Set up a system for updates and maintenance.
-

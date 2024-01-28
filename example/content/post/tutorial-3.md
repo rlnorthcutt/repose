@@ -29,3 +29,28 @@ Managing the project
 - create the shell script to run the go files 
 - test the dev script
 - test the build
+
+## #Sample code for objects
+A note about methods. If the method is lowercase, then it is "private", so they
+won't be accessible inside other files. So, you need to use Capitalized methods
+for anything that needs to be accessed in other files.
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+// Defining a new public type 'Template'
+type Template int
+
+// Defining a global varaiable for Template
+var template Template
+
+// **********  Template methods  **********
+func (t *Template) Test() {
+	fmt.Printf("Template.go present and accounted for.")
+}
+
+```

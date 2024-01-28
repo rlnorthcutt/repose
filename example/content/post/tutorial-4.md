@@ -1,0 +1,64 @@
+---
+title: "Go Tutorial - Building a Static Site Generator - Part 4"
+description: "Exploring the beauty and simplicity of static websites in the modern web era."
+tags: [static sites, web development, ZenForge]
+image: /images/zen-static.jpg
+index: true
+publish: true
+author: "Ron Northcutt"
+publish_date: "2024-01-30"
+template: "blog-post.tmpl"
+---
+
+# Go Tutorial - Building a Static Site Generator - Part  4
+## Shell script for running multifile Go project
+
+🧙🏾‍♂️: Writing a shell script to run all `.go` files in the current directory is a straightforward task. The script will use the `go run` command, which can compile and run Go programs. Typically, you would end the file in `.sh` to denote that it is a shell script. However, here we will skip that to make it simpler for testing purposes.
+
+Here's a simple script to achieve this:
+
+### Shell Script: `gotest`
+
+```bash
+#!/bin/bash
+
+# Find all .go files in the current directory and store them in a variable
+go_files=$(find . -maxdepth 1 -name "*.go")
+
+# Check if there are any .go files
+if [ -z "$go_files" ]; then
+    echo "No .go files found in the current directory."
+    exit 1
+fi
+
+# Run all .go files with any provided arguments
+echo "-------------------------- "
+echo "|--  Testing Zenforge  --| "
+echo "-------------------------- "
+go run $go_files $@ 
+
+```
+
+### How to Use the Script
+
+1. **Make the Script Executable**: 
+   First, you need to make this script executable. You can do this by running the following command in your terminal:
+
+   ```bash
+   chmod +x gotest
+   ```
+
+2. **Run the Script**: 
+   Execute the script by typing `./gotest` in your terminal.
+
+### Notes
+
+- This script assumes that all `.go` files in the current directory are part of the same package and can be run together. If this is not the case, the script might not work as expected.
+- The script uses `find` to locate `.go` files. It's set to only look in the current directory (`-maxdepth 1`).
+- The script checks if there are no `.go` files and exits with a message if none are found.
+$* in the echo statement prints all script arguments as a single string.
+"$@" is used to pass all the script arguments to the go run command. It preserves the argument boundaries (e.g., new post title is passed as three separate arguments).
+
+Remember, shell scripts can vary based on the shell environment and operating system. This script is written for a standard Unix-like shell (like Bash), commonly found in Linux and macOS environments.
+
+If you have any specific requirements or face issues with this script, feel free to ask for further assistance!
