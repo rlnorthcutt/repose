@@ -15,6 +15,12 @@ One of the best things about Golang is that here is no right or wrong way to bui
 
 coming from OOP background, I wanted to organize it in a similar way according to my own preferences and experience. At the same, time, I want to avoid overly complex
 
+## Strategy
+- berak it into sections so we can get to a stopping point each time
+- "wire up" most of the files to "mockup" the functionality
+- build out each section as we go along
+- we will have a stable (but limited functionality) whenever we step away
+
 ## MVC model
 - Model - data stored in MD files
 - View - Go templates

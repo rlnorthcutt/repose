@@ -56,6 +56,10 @@ Build options:
     -r, --root <ROOT> Directory to use as root of project (default: .)
     -c, --config <CONFIG> Path to configuration file (default: config.yml)
 
+## Why another static site gnerator?
+- simpler format
+- smaller - hugo is 80Mb  (vs <5Mb>)
+- less opinionated
 
 
 

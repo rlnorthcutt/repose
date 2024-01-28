@@ -54,3 +54,21 @@ func (t *Template) Test() {
 }
 
 ```
+## Sample code for main controller
+```
+package main
+
+import (
+    fmt
+)
+
+func main() {
+    fmt.Printf("Calling all systems - role call:")
+	// Test that things are wired up properly
+    command.Test()
+	filesystem.Test()
+    logger.Test()
+	template.Test()
+}
+
+```

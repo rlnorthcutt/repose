@@ -1,2 +1,5 @@
 sitename: Site name
 author: Ron Northcutt
+editor: nano
+contentDirectory: content
+outputDirectory: web
