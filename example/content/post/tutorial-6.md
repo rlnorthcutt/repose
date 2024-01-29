@@ -1,7 +1,7 @@
 ---
 title: "Go Tutorial - Building a Static Site Generator - Part 6"
 description: "Exploring the beauty and simplicity of static websites in the modern web era."
-tags: [static sites, web development, ZenForge]
+tags: [static sites, web development, SiteStat]
 image: /images/zen-static.jpg
 index: true
 publish: true
@@ -31,10 +31,10 @@ var command Command
 
 // **********  Command functions  **********************************************
 
-// Initializes a new ZenForge project.
+// Initializes a new SiteStat project.
 // It creates the proper folder structure and starter files.
 func (c *Command) Init() string {
-	fmt.Println("Initializing ZenForge project")
+	fmt.Println("Initializing SiteStat project")
 	return ""
 }
 
@@ -43,7 +43,7 @@ func (c *Command) Init() string {
 // If the required arguments are not provided, it prints the usage information.
 func (c *Command) New() {
 	if len(os.Args) != 4 {
-		logger.Info("Usage: zenforge new [CONTENTTYPE] [FILENAME]")
+		logger.Info("Usage: sitestat new [CONTENTTYPE] [FILENAME]")
 		return
 	}
 	contentType := os.Args[2]
@@ -57,7 +57,7 @@ func (c *Command) Demo() string {
 	return ""
 }
 
-// Builds the ZenForge site based on the current project default values.
+// Builds the SiteStat site based on the current project default values.
 // It uses command-line flags to modify the root directory and config file.
 // If there is an error parsing the command flags, it prints an error message.
 func (c *Command) Build() {
@@ -73,16 +73,16 @@ func (c *Command) Build() {
 	logger.Info("Building site from %s with config %s\n", *root, *config)
 }
 
-// Starts serving the ZenForge site for local preview.
+// Starts serving the SiteStat site for local preview.
 func (c *Command) Preview() string {
-	fmt.Printf("ZenForge site")
+	fmt.Printf("SiteStat site")
 	return ""
 }
 
 func (c *Command) Help() string {
-	response := `ZenForge Commands:
-    init  - Initialize a new ZenForge project
-    new   - Create new content. Usage: zenforge new [CONTENTTYPE] [FILENAME]
+	response := `SiteStat Commands:
+    init  - Initialize a new SiteStat project
+    new   - Create new content. Usage: sitestat new [CONTENTTYPE] [FILENAME]
     demo  - Generate demo content
     build - Build the site. Options: -r [ROOT], -c [CONFIG]
     preview - Setup a local server to preview the site

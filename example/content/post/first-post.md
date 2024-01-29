@@ -1,7 +1,7 @@
 ---
 title: "The Zen of Static Sites"
 description: "Exploring the beauty and simplicity of static websites in the modern web era."
-tags: [static sites, web development, ZenForge]
+tags: [static sites, web development, SiteStat]
 image: /images/zen-static.jpg
 noindex: false
 author: "Ron Northcutt"
@@ -11,7 +11,7 @@ template: "blog-post.tmpl"
 
 # The Zen of Static Sites
 
-Static websites have been around since the dawn of the internet, yet they remain at the forefront of the web development world for their simplicity, speed, and reliability. In this article, we explore the enduring appeal of static sites and how tools like ZenForge are revolutionizing their creation.
+Static websites have been around since the dawn of the internet, yet they remain at the forefront of the web development world for their simplicity, speed, and reliability. In this article, we explore the enduring appeal of static sites and how tools like SiteStat are revolutionizing their creation.
 
 ## Why Static Sites?
 

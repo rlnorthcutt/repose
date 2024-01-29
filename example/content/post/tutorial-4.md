@@ -1,7 +1,7 @@
 ---
 title: "Go Tutorial - Building a Static Site Generator - Part 4"
 description: "Exploring the beauty and simplicity of static websites in the modern web era."
-tags: [static sites, web development, ZenForge]
+tags: [static sites, web development, SiteStat]
 image: /images/zen-static.jpg
 index: true
 publish: true
@@ -32,7 +32,7 @@ go_files=$(find "$script_dir" -maxdepth 1 -name "*.go" ! -name "*_test.go")
 
 # Run all .go files with any provided arguments
 echo "-------------------------- "
-echo "|--  Testing Zenforge  --| "
+echo "|--  Testing SiteStat  --| "
 echo "-------------------------- "
 go run $go_files $@ 
 

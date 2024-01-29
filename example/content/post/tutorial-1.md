@@ -1,7 +1,7 @@
 ---
 title: "Go Tutorial - Building a Static Site Generator - Part 1"
 description: "Exploring the beauty and simplicity of static websites in the modern web era."
-tags: [static sites, web development, ZenForge]
+tags: [static sites, web development, SiteStat]
 image: /images/zen-static.jpg
 index: true
 publish: true
@@ -12,7 +12,7 @@ template: "blog-post.tmpl"
 
 # Go Tutorial - Building a Static Site Generator - Part  1
 ## Planning
-Zenforge is focused on elegant simplicity. Day to day usage is easy - just add MD files in the directory structure for the site. When you add `content/post/amazing-tool.md` you will generate
+SiteStat is focused on elegant simplicity. Day to day usage is easy - just add MD files in the directory structure for the site. When you add `content/post/amazing-tool.md` you will generate
 `mysite.com/post/amazing-tool.html`
 
 Templates are managed by Go templates one a component and layout based structure.
@@ -36,7 +36,7 @@ MD files use components to extend default formatting
 - Config file holds any system options or configuration
 
 ### Project folder structure
-ZenForge takes the simplest approach possible - only 3 directories will be needed in your project. 
+SiteStat takes the simplest approach possible - only 3 directories will be needed in your project. 
 
 - config.yml - single config file in the root
 - content - route and content combined
@@ -44,12 +44,12 @@ ZenForge takes the simplest approach possible - only 3 directories will be neede
 - web - static assets
 
 ### CLI commands
-Zenforge is a command line tool for managing your static site. 
+SiteStat is a command line tool for managing your static site. 
 
-- zenforge new      - Creates a new site structure in the given directory
-- zenforge help      - List of commands
-- zenforge build     - PArses the content directory and builds the site in the web directory
-- zenforge serve    - Builds the site and starts an HTTP server on http://localhost:8080
+- sitestat new      - Creates a new site structure in the given directory
+- sitestat help      - List of commands
+- sitestat build     - PArses the content directory and builds the site in the web directory
+- sitestat serve    - Builds the site and starts an HTTP server on http://localhost:8080
 
 
 Build options:

@@ -46,7 +46,7 @@ In this case, `err` is passed as an additional argument.
 #### 3. Formatting Messages:
 You can use `Fatal` like `Printf`, combining a format string with variadic arguments:
 ```go
-name := "ZenForge"
+name := "SiteStat"
 err := someFunction()
 if err != nil {
     logger.Fatal("Error in %s: %v", name, err)

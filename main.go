@@ -20,11 +20,12 @@ var config Config
 func main() {
 	// Check if a command is provided, immediately exit if not.
 	if len(os.Args) < 2 {
-		logger.Warn("Expected a command - type `zenforge help` to get options.")
+		logger.Warn("Expected a command - type `sitestat help` to get options.")
 		os.Exit(0)
 	}
 
 	// Load the config
+	//  @TODO redo this so we only need it for  build & new
 	config, err := readConfig("config.yml")
 	if err != nil {
 		log.Fatalf("Error reading config: %v", err)
@@ -43,6 +44,8 @@ func main() {
 		command.Build()
 	case "preview":
 		command.Preview()
+	case "update":
+		command.Update()
 	case "help":
 		command.Help()
 	default:

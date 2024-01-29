@@ -19,10 +19,10 @@ var command Command
 
 // **********  Public Command Methods  **********
 
-// Initializes a new ZenForge project.
+// Initializes a new SiteStat project.
 // It creates the proper folder structure and starter files.
 func (c *Command) Init() string {
-	fmt.Println("Initializing ZenForge project")
+	fmt.Println("Initializing SiteStat project")
 	return ""
 }
 
@@ -32,7 +32,7 @@ func (c *Command) Init() string {
 func (c *Command) New() {
 	// If the required arguments are not provided, print the usage information.
 	if len(os.Args) != 4 {
-		logger.Info("Usage: zenforge new [CONTENTTYPE] [FILENAME]")
+		logger.Info("Usage: sitestat new [CONTENTTYPE] [FILENAME]")
 		return
 	}
 	contentDirectory := config.ContentDirectory
@@ -70,7 +70,7 @@ func (c *Command) Demo() string {
 	return ""
 }
 
-// Builds the ZenForge site based on the current project default values.
+// Builds the SiteStat site based on the current project default values.
 // It uses command-line flags to modify the root directory and config file.
 // If there is an error parsing the command flags, it prints an error message.
 func (c *Command) Build() {
@@ -86,19 +86,26 @@ func (c *Command) Build() {
 	logger.Info("Building site from %s with config %s\n", *root, *config)
 }
 
-// Starts serving the ZenForge site for local preview.
+// Starts serving the SiteStat site for local preview.
 func (c *Command) Preview() string {
-	fmt.Printf("ZenForge site")
+	fmt.Printf("SiteStat site")
+	return ""
+}
+
+// Updates the SiteStat binary in the current directory
+func (c *Command) Update() string {
+	fmt.Printf("SiteStat update placeholder")
 	return ""
 }
 
 func (c *Command) Help() string {
-	response := `ZenForge Commands:
-    init  - Initialize a new ZenForge project
-    new   - Create new content. Usage: zenforge new [CONTENTTYPE] [FILENAME]
+	response := `SiteStat Commands:
+    init  - Initialize a new SiteStat project
+    new   - Create new content. Usage: sitestat new [CONTENTTYPE] [FILENAME]
     build - Build the site. Options: -r [ROOT], -c [CONFIG]
     preview - Setup a local server to preview the site
     demo  - Generate demo content
+	update - Update the sitestat binary
     help  - Show this help message\n`
 	logger.Info(response)
 	return ""

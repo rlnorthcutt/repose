@@ -1,10 +1,10 @@
-# zenforge
+# sitestat
 An elegant and simple GOlang static site generator.
 
 ## Options
-* init    - Initialize a new ZenForge project
+* init    - Initialize a new SiteStat project
 * new     - Create new content. 
-            _Usage: zenforge new [CONTENTTYPE] [FILENAME]_
+            _Usage: sitestat new [CONTENTTYPE] [FILENAME]_
 * demo    - Generate demo content
 * build   - Build the site. 
             _Options: -r [ROOT], -c [CONFIG]_

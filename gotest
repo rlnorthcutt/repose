@@ -8,6 +8,6 @@ go_files=$(find "$script_dir" -maxdepth 1 -name "*.go" ! -name "*_test.go")
 
 # Run all .go files with any provided arguments
 echo "-------------------------- "
-echo "|--  Testing Zenforge  --| "
+echo "|--  Testing SiteStat  --| "
 echo "-------------------------- "
 go run $go_files $@ 

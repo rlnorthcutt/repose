@@ -1,4 +1,4 @@
-module github.com/rlnorthcutt/zenforge
+module github.com/rlnorthcutt/sitestat
 
 go 1.21.6
 

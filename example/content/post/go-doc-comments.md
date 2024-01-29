@@ -1,7 +1,7 @@
 ---
 title: "Go Doc Comments"
 description: "Exploring the beauty and simplicity of static websites in the modern web era."
-tags: [static sites, web development, ZenForge]
+tags: [static sites, web development, SiteStat]
 image: /images/zen-static.jpg
 index: true
 publish: true
