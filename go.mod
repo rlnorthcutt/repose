@@ -1,4 +1,4 @@
-module github.com/rlnorthcutt/sitestat
+module github.com/rlnorthcutt/repose
 
 go 1.21.6
 
