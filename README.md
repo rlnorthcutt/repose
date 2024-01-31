@@ -2,9 +2,9 @@
 An elegant and simple GOlang static site generator.
 
 ## Options
-* init    - Initialize a new SiteStat project
+* init    - Initialize a new Repose project
 * new     - Create new content. 
-            _Usage: sitestat new [CONTENTTYPE] [FILENAME]_
+            _Usage: reposenew [CONTENTTYPE] [FILENAME]_
 * demo    - Generate demo content
 * build   - Build the site. 
             _Options: -r [ROOT], -c [CONFIG]_

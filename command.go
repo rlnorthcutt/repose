@@ -1,8 +1,8 @@
 package main
 
 import (
-	"flag"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,30 +12,36 @@ import (
 )
 
 // Defining a new public type 'Command'
-type Command int
+type Command struct {
+	rootPath   string
+	configPath string
+}
 
 // Defining a global varaiable for Command
 var command Command
 
 // **********  Public Command Methods  **********
 
-// Initializes a new SiteStat project.
+// Initializes a new Repose project.
 // It creates the proper folder structure and starter files.
 func (c *Command) Init() string {
-	fmt.Println("Initializing SiteStat project")
+	if err := createDirectoryStructure(c.rootPath); err != nil {
+		log.Fatal("Error creating site structure: ", err)
+	}
+	logger.Info("Repose project created in %s", c.rootPath)
 	return ""
 }
 
 // Creates new content based on the provided content type and filename.
 // It requires two arguments: content type and filename.
 // The content type defines the path, so it can also include a subfolder
-func (c *Command) New() {
+func (c *Command) New(config Config) {
 	// If the required arguments are not provided, print the usage information.
 	if len(os.Args) != 4 {
-		logger.Info("Usage: sitestat new [CONTENTTYPE] [FILENAME]")
+		logger.Info("Usage: repose new [CONTENTTYPE] [FILENAME]")
 		return
 	}
-	contentDirectory := config.ContentDirectory
+	contentDirectory := config.contentDirectory
 	typeDirectory := os.Args[2]
 	fileNameParam := os.Args[3]
 	fileName, title := processFileName(fileNameParam)
@@ -70,45 +76,53 @@ func (c *Command) Demo() string {
 	return ""
 }
 
-// Builds the SiteStat site based on the current project default values.
+// Builds the Repose site based on the current project default values.
 // It uses command-line flags to modify the root directory and config file.
 // If there is an error parsing the command flags, it prints an error message.
-func (c *Command) Build() {
-	buildCmd := flag.NewFlagSet("build", flag.ExitOnError)
-	root := buildCmd.String("r", ".", "Directory to use as root of the project")
-	config := buildCmd.String("c", "config.yml", "Path to configuration file")
+func (c *Command) Build(config Config) {
 
-	if err := buildCmd.Parse(os.Args[2:]); err != nil {
-		logger.Error("Error parsing build command flags:", err)
-		return
-	}
-
-	logger.Info("Building site from %s with config %s\n", *root, *config)
+	logger.Info("Building site from %s with config %s\n", *&c.rootPath, *&c.configPath)
 }
 
-// Starts serving the SiteStat site for local preview.
-func (c *Command) Preview() string {
-	fmt.Printf("SiteStat site")
+// Starts serving the Repose site for local preview.
+func (c *Command) Preview(config Config) string {
+	fmt.Printf("Repose site")
 	return ""
 }
 
-// Updates the SiteStat binary in the current directory
+// Updates the Repose binary in the current directory
 func (c *Command) Update() string {
-	fmt.Printf("SiteStat update placeholder")
+	fmt.Printf("Repose update placeholder")
 	return ""
 }
 
 func (c *Command) Help() string {
-	response := `SiteStat Commands:
-    init  - Initialize a new SiteStat project
-    new   - Create new content. Usage: sitestat new [CONTENTTYPE] [FILENAME]
-    build - Build the site. Options: -r [ROOT], -c [CONFIG]
-    preview - Setup a local server to preview the site
-    demo  - Generate demo content
-	update - Update the sitestat binary
-    help  - Show this help message\n`
+	response := `Repose Commands:
+Usage: repose [OPTIONS] <COMMAND>
+
+Commands:
+	init    - Initialize a new Repose project
+	new     - Create new content. Usage: repose new [CONTENTTYPE] [FILENAME]
+	build   - Build the site.
+	preview - Setup a local server to preview the site
+	demo    - Generate demo content
+	update  - Update the repose binary
+	help    - Show this help message 
+	
+Options:
+	-r, --root <ROOT> Directory to use as root of project (default: .)
+	-c, --config <CONFIG> Path to configuration file (default: config.toml)
+`
 	logger.Info(response)
 	return ""
+}
+
+func (c *Command) SetRootPath(path string) {
+	c.rootPath = path
+}
+
+func (c *Command) SetConfigPath(path string) {
+	c.configPath = path
 }
 
 // **********  Private Command Methods  **********
@@ -152,7 +166,31 @@ template: "{contentType}.tmpl"
 	// Replace placeholders with actual values
 	content = strings.Replace(content, "{title}", title, -1)
 	content = strings.Replace(content, "{contentType}", contentType, -1)
-	content = strings.Replace(content, "{author}", config.Author, -1)
+	content = strings.Replace(content, "{author}", config.author, -1)
 
 	return content
+}
+
+func createDirectoryStructure(rootPath string) error {
+	for _, dir := range []string{"content", "template", "web"} {
+		if err := os.Mkdir(filepath.Join(rootPath, dir), 0755); err != nil {
+			return err
+		}
+	}
+
+	files := []struct {
+		Name    string
+		Content []byte
+	}{
+		{"config.yml", []byte("url = \"http://localhost:8080\"\ntitle = \"My website\"\n")},
+		{"template/default.html", []byte("<!DOCTYPE html>\n<head>\n\t<title>{{ .Title }}</title>\n</head>\n<body>\n{{ .Content }}\n</body>\n</html>")},
+		{"content/index.md", []byte("+++\ntitle = \"Repose!\"\n+++\n\nWelcome to my website.\n")},
+	}
+	for _, f := range files {
+		if err := os.WriteFile(filepath.Join(rootPath, f.Name), f.Content, 0655); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
