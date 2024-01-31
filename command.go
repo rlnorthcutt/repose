@@ -28,7 +28,6 @@ func (c *Command) Init() string {
 	if err := c.createNewProjectFiles(c.rootPath); err != nil {
 		log.Fatal("Error creating site structure: ", err)
 	}
-	logger.Info("Repose project created in %s", c.rootPath)
 	return ""
 }
 
@@ -142,10 +141,17 @@ func (c *Command) defaultContent(contentType string, title string) string {
 	return content
 }
 
+// createNewProjectFiles creates the default files and directories for a new project.
 func (c *Command) createNewProjectFiles(rootPath string) error {
+	// Set the output for the root path
+	installDir := rootPath
+	if rootPath == "" {
+		installDir = "this directory"
+	}
+
 	// Create the project directory structure
-	logger.Info("Creating new project in %s", rootPath)
-	dirs := []string{"content", "template", "web"}
+	logger.Info("Creating new project in %s", installDir)
+	dirs := []string{"content", "template", "web", "web/asset", "web/asset/css", "web/asset/js", "web/asset/img"}
 	for _, dir := range dirs {
 		dirPath := filepath.Join(rootPath, dir)
 		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
@@ -162,7 +168,7 @@ func (c *Command) createNewProjectFiles(rootPath string) error {
 	}{
 		{"config.yml", DefaultConfig},
 		{"template/default.html", NewMD},
-		{config.contentDirectory + "/index.md", DefaultHTML},
+		{"content/index.md", DefaultHTML},
 	}
 	for _, f := range files {
 		filePath := filepath.Join(rootPath, f.Name)
@@ -170,6 +176,8 @@ func (c *Command) createNewProjectFiles(rootPath string) error {
 			return err
 		}
 	}
+
+	logger.Info("Repose project created in %s", installDir)
 
 	return nil
 }
