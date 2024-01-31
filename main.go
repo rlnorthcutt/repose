@@ -13,6 +13,7 @@ type Config struct {
 	editor           string `yaml:"editor"`
 	contentDirectory string `yaml:"contentDirectory"`
 	outputDirectory  string `yaml:"outputDirectory"`
+	previewURL       string `yaml:"previewURL"`
 }
 
 var config Config
@@ -45,7 +46,9 @@ func main() {
 		var err error
 		config, err = readConfig()
 		if err != nil {
-			logger.Fatal("Error reading config: %v", err)
+			//logger.Fatal("Error reading config: %v", err)
+			logger.Info("No config file found. You need to run `repose init` first.")
+			os.Exit(0)
 		}
 	}
 

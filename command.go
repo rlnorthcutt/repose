@@ -25,7 +25,7 @@ var command Command
 // Initializes a new Repose project.
 // It creates the proper folder structure and starter files.
 func (c *Command) Init() string {
-	if err := createDirectoryStructure(c.rootPath); err != nil {
+	if err := c.createNewProjectFiles(c.rootPath); err != nil {
 		log.Fatal("Error creating site structure: ", err)
 	}
 	logger.Info("Repose project created in %s", c.rootPath)
@@ -44,7 +44,7 @@ func (c *Command) New(config Config) {
 	contentDirectory := config.contentDirectory
 	typeDirectory := os.Args[2]
 	fileNameParam := os.Args[3]
-	fileName, title := processFileName(fileNameParam)
+	fileName, title := c.processFileName(fileNameParam)
 
 	// We allow the user to include a subdirectory in the content type param
 	// Extract the first part as the type if contentType has a '/'
@@ -59,7 +59,7 @@ func (c *Command) New(config Config) {
 	path := filepath.Join(contentDirectory, typeDirectory, fileName)
 
 	// Get default content
-	content := defaultContent(contentType, title)
+	content := c.defaultContent(contentType, title)
 
 	// Create the file or directory
 	if err := filesystem.Create(path, content); err != nil {
@@ -80,7 +80,6 @@ func (c *Command) Demo() string {
 // It uses command-line flags to modify the root directory and config file.
 // If there is an error parsing the command flags, it prints an error message.
 func (c *Command) Build(config Config) {
-
 	logger.Info("Building site from %s with config %s\n", *&c.rootPath, *&c.configPath)
 }
 
@@ -97,22 +96,7 @@ func (c *Command) Update() string {
 }
 
 func (c *Command) Help() string {
-	response := `Repose Commands:
-Usage: repose [OPTIONS] <COMMAND>
-
-Commands:
-	init    - Initialize a new Repose project
-	new     - Create new content. Usage: repose new [CONTENTTYPE] [FILENAME]
-	build   - Build the site.
-	preview - Setup a local server to preview the site
-	demo    - Generate demo content
-	update  - Update the repose binary
-	help    - Show this help message 
-	
-Options:
-	-r, --root <ROOT> Directory to use as root of project (default: .)
-	-c, --config <CONFIG> Path to configuration file (default: config.toml)
-`
+	response := HelpText
 	logger.Info(response)
 	return ""
 }
@@ -127,7 +111,7 @@ func (c *Command) SetConfigPath(path string) {
 
 // **********  Private Command Methods  **********
 
-func processFileName(fileName string) (string, string) {
+func (c *Command) processFileName(fileName string) (string, string) {
 	// Check the file extension
 	ext := filepath.Ext(fileName)
 	if ext != ".md" && ext != ".html" {
@@ -147,21 +131,8 @@ func processFileName(fileName string) (string, string) {
 }
 
 // defaultContent returns default content based on the content type.
-func defaultContent(contentType string, title string) string {
-	content := `---
-title: "{title}"
-description: "{contentType} about {title}"
-tags: []
-image: 
-index: true
-author: "{author}"
-publish_date: 
-template: "{contentType}.tmpl"
----
-	
-# {title}
-
-`
+func (c *Command) defaultContent(contentType string, title string) string {
+	content := NewMD
 
 	// Replace placeholders with actual values
 	content = strings.Replace(content, "{title}", title, -1)
@@ -171,23 +142,31 @@ template: "{contentType}.tmpl"
 	return content
 }
 
-func createDirectoryStructure(rootPath string) error {
-	for _, dir := range []string{"content", "template", "web"} {
-		if err := os.Mkdir(filepath.Join(rootPath, dir), 0755); err != nil {
-			return err
+func (c *Command) createNewProjectFiles(rootPath string) error {
+	// Create the project directory structure
+	logger.Info("Creating new project in %s", rootPath)
+	dirs := []string{"content", "template", "web"}
+	for _, dir := range dirs {
+		dirPath := filepath.Join(rootPath, dir)
+		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+			if err := os.Mkdir(dirPath, 0755); err != nil {
+				return err
+			}
 		}
 	}
 
+	// Create the default files
 	files := []struct {
 		Name    string
-		Content []byte
+		Content string
 	}{
-		{"config.yml", []byte("url = \"http://localhost:8080\"\ntitle = \"My website\"\n")},
-		{"template/default.html", []byte("<!DOCTYPE html>\n<head>\n\t<title>{{ .Title }}</title>\n</head>\n<body>\n{{ .Content }}\n</body>\n</html>")},
-		{"content/index.md", []byte("+++\ntitle = \"Repose!\"\n+++\n\nWelcome to my website.\n")},
+		{"config.yml", DefaultConfig},
+		{"template/default.html", NewMD},
+		{config.contentDirectory + "/index.md", DefaultHTML},
 	}
 	for _, f := range files {
-		if err := os.WriteFile(filepath.Join(rootPath, f.Name), f.Content, 0655); err != nil {
+		filePath := filepath.Join(rootPath, f.Name)
+		if err := filesystem.Create(filePath, f.Content); err != nil {
 			return err
 		}
 	}
