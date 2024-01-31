@@ -1,7 +1,7 @@
 ---
 title: "Go Tutorial - Building a Static Site Generator - Part 3"
 description: "Exploring the beauty and simplicity of static websites in the modern web era."
-tags: [static sites, web development, SiteStat]
+tags: [static sites, web development, Repose]
 image: /images/zen-static.jpg
 index: true
 publish: true
