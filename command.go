@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -24,6 +27,7 @@ var command Command
 
 // Initializes a new Repose project.
 // It creates the proper folder structure and starter files.
+// @TODO: modffy this to ask the user for config values
 func (c *Command) Init() string {
 	if err := c.createNewProjectFiles(c.rootPath); err != nil {
 		log.Fatal("Error creating site structure: ", err)
@@ -35,41 +39,21 @@ func (c *Command) Init() string {
 // It requires two arguments: content type and filename.
 // The content type defines the path, so it can also include a subfolder
 func (c *Command) New(config Config) {
-	// If the required arguments are not provided, print the usage information.
 	if len(os.Args) != 4 {
 		logger.Info("Usage: repose new [CONTENTTYPE] [FILENAME]")
 		return
 	}
-	contentDirectory := config.contentDirectory
+
 	typeDirectory := os.Args[2]
 	fileNameParam := os.Args[3]
-	fileName, title := c.processFileName(fileNameParam)
 
-	// We allow the user to include a subdirectory in the content type param
-	// Extract the first part as the type if contentType has a '/'
-	var contentType string
-	if strings.Contains(contentType, "/") {
-		contentType = strings.Split(contentType, "/")[0]
-	} else {
-		contentType = typeDirectory
+	if err := c.createNewContent(config, typeDirectory, fileNameParam); err != nil {
+		logger.Error(err.Error())
 	}
-
-	// Construct the path
-	path := filepath.Join(contentDirectory, typeDirectory, fileName)
-
-	// Get default content
-	content := c.defaultContent(contentType, title)
-
-	// Create the file or directory
-	if err := filesystem.Create(path, content); err != nil {
-		logger.Error("Failed to create %s: %v", path, err)
-		return
-	}
-
-	fmt.Printf("Successfully created new %s: %s\n", contentType, path)
 }
 
 // Generates a new project with demo content and templates to create a new site.
+// @TODO: create demo content so this works
 func (c *Command) Demo() string {
 	logger.Info("Generating demo content")
 	return ""
@@ -79,7 +63,10 @@ func (c *Command) Demo() string {
 // It uses command-line flags to modify the root directory and config file.
 // If there is an error parsing the command flags, it prints an error message.
 func (c *Command) Build(config Config) {
-	logger.Info("Building site from %s with config %s\n", *&c.rootPath, *&c.configPath)
+	logger.Info("Building site from %s with config %s\n", c.rootPath, c.configPath)
+	if err := builder.BuildSite(); err != nil {
+		fmt.Println("Error building site:", err)
+	}
 }
 
 // Starts serving the Repose site for local preview.
@@ -100,6 +87,7 @@ func (c *Command) Help() string {
 	return ""
 }
 
+// @TODO: see if we can now remove this
 func (c *Command) SetRootPath(path string) {
 	c.rootPath = path
 }
@@ -110,6 +98,7 @@ func (c *Command) SetConfigPath(path string) {
 
 // **********  Private Command Methods  **********
 
+// processFileName takes a name and returns the filename (with extension) and title.
 func (c *Command) processFileName(fileName string) (string, string) {
 	// Check the file extension
 	ext := filepath.Ext(fileName)
@@ -136,7 +125,7 @@ func (c *Command) defaultContent(contentType string, title string) string {
 	// Replace placeholders with actual values
 	content = strings.Replace(content, "{title}", title, -1)
 	content = strings.Replace(content, "{contentType}", contentType, -1)
-	content = strings.Replace(content, "{author}", config.author, -1)
+	content = strings.Replace(content, "{author}", config.Author, -1)
 
 	return content
 }
@@ -162,17 +151,24 @@ func (c *Command) createNewProjectFiles(rootPath string) error {
 	}
 
 	// Create the default files
+	indexMD := c.defaultContent("default", "Your homepage")
 	files := []struct {
 		Name    string
 		Content string
 	}{
 		{"config.yml", DefaultConfig},
-		{"template/default.html", NewMD},
-		{"content/index.md", DefaultHTML},
+		{"template/default.tmpl", DefaultTemplate},
+		{"template/page.tmpl", PageTemplate},
+		{"template/header.tmpl", HeaderTemplate},
+		{"template/navigation.tmpl", NavigationTemplate},
+		{"template/footer.tmpl", FooterTemplate},
+		{"content/index.md", indexMD},
+		{"content/test.md", MarkdownTest},
 	}
 	for _, f := range files {
 		filePath := filepath.Join(rootPath, f.Name)
-		if err := filesystem.Create(filePath, f.Content); err != nil {
+		cleanContent := strings.TrimSpace(f.Content)
+		if err := filesystem.Create(filePath, cleanContent); err != nil {
 			return err
 		}
 	}
@@ -180,4 +176,87 @@ func (c *Command) createNewProjectFiles(rootPath string) error {
 	logger.Info("Repose project created in %s", installDir)
 
 	return nil
+}
+
+// createNewContent creates a new content file in the specified directory.
+func (c *Command) createNewContent(config Config, typeDirectory, fileNameParam string) error {
+	fileName, title := c.processFileName(fileNameParam)
+
+	// Determine content type
+	contentType := typeDirectory
+	if strings.Contains(typeDirectory, "/") {
+		contentType = strings.Split(typeDirectory, "/")[0]
+	}
+
+	// Construct the path
+	logger.Info("Creating new %s in %s", contentType, config.ContentDirectory)
+	path := filepath.Join(config.ContentDirectory, typeDirectory, fileName)
+
+	// Get default content
+	content := c.defaultContent(contentType, title)
+
+	// Create the file or directory
+	if err := filesystem.Create(path, content); err != nil {
+		return fmt.Errorf("failed to create %s: %v", path, err)
+	}
+
+	logger.Info("Successfully created new %s: %s\n", contentType, path)
+
+	// Check if the template exists
+	templateName := contentType + ".tmpl"
+	found, err := filesystem.ExistsRecursive(templateName, "template")
+	if err != nil {
+		fmt.Println("Error searching for template:", err)
+		return nil
+	}
+
+	// Ask the user to create the template file if it doesn't exist
+	if !found {
+		logger.Warn("Template file not found: %s\n", templateName)
+		fmt.Println("Do you want to create this template? (yes/no)")
+
+		// Read the user's response
+		reader := bufio.NewReader(os.Stdin)
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			logger.Error("Error reading response:", err)
+			return nil
+		}
+
+		// Trim whitespace and newline character
+		response = strings.TrimSpace(response)
+		// If yes, then create the template file
+		if strings.ToLower(response) == "yes" {
+			logger.Info("Creating template file: %s", templateName)
+			path := "template/" + templateName
+			if err := filesystem.Create(path, DefaultTemplate); err != nil {
+				logger.Error("Error creating template:", err)
+				return nil
+			}
+			fmt.Println("Template created successfully.")
+		}
+	}
+
+	// Check if the editor is set and not empty, then open the file with it
+	if config.Editor != "" {
+		if err := c.openFileInEditor(config.Editor, path); err != nil {
+			// Log the error but do not fail the entire operation
+			logger.Error("Failed to open file in editor: %v", err)
+		}
+	}
+
+	return nil
+}
+
+// openFileInEditor opens the specified file in the given editor.
+func (c *Command) openFileInEditor(editor, filePath string) error {
+	logger.Info("Opening file in editor: %s", editor)
+	// Pause for 1 second before opening the editor
+	time.Sleep(1 * time.Second)
+
+	cmd := exec.Command(editor, filePath)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }

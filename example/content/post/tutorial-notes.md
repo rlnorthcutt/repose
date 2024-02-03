@@ -17,3 +17,7 @@
 10) create filesystem.go for create/delete (including check path and private methods)
 11) create a test flie for filesystem & run tests (we will only o this for more complex objects)
 12) update "new command" to use filesystem
+
+
+
+Config system improved using this guide: https://dev.to/koddr/let-s-write-config-for-your-golang-web-app-on-right-way-yaml-5ggp

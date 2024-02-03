@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // Defining a new public type 'Filesystem'
@@ -15,7 +17,6 @@ var filesystem Filesystem
 // **********  Public Filesystem methods  **********
 
 // Create a file or directory based on the given path and content.
-// If the path already exists, it returns an error.
 func (f *Filesystem) Create(path string, content string) error {
 	// Check if the path exists using checkPath
 	if f.pathExists(path) {
@@ -30,8 +31,24 @@ func (f *Filesystem) Create(path string, content string) error {
 	return f.createDirectory(path)
 }
 
+// Read returns the content of the file at the given path.
+func (f *Filesystem) Read(path string) (string, error) {
+	// Check if the path exists
+	if !f.pathExists(path) {
+		warningMessage := path + " doesn't exist"
+		logger.Warn(warningMessage)
+		return "", errors.New(warningMessage)
+	}
+
+	// Read the file
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(content), nil
+}
+
 // Delete removes a file or directory at the given path.
-// If the path does not exist, it returns an error.
 func (f *Filesystem) Delete(path string) error {
 	// Check if the path exists
 	if !f.pathExists(path) {
@@ -42,6 +59,61 @@ func (f *Filesystem) Delete(path string) error {
 
 	// Delete the file or directory
 	return os.RemoveAll(path)
+}
+
+// Exists checks if a file or directory exists at the given path.
+func (f *Filesystem) Exists(path string) bool {
+	return f.pathExists(path)
+}
+
+func (f *Filesystem) ExistsRecursive(fileName string, directory string) (bool, error) {
+	var exists bool
+
+	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err // return any error encountered
+		}
+
+		// Check if the current file matches the fileName
+		if filepath.Base(path) == fileName {
+			exists = true
+			return filepath.SkipDir // Stop walking as we've found the file
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return false, err // return any error encountered during walking
+	}
+
+	return exists, nil
+}
+
+// ReadYAML reads the YAML content and returns a map of the data.
+// We use this instead of loading the YAML modules to keep the size down
+func (f *Filesystem) ParseYml(content string) (map[string]string, error) {
+	scanner := bufio.NewScanner(strings.NewReader(content))
+	ymlMap := make(map[string]string)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) != 2 {
+			continue // Skip invalid lines
+		}
+
+		key := strings.TrimSpace(parts[0])
+		value := strings.TrimSpace(parts[1])
+
+		ymlMap[key] = value
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return ymlMap, nil
 }
 
 // **********  Private Filesystem methods  **********
