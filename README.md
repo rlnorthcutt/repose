@@ -1,22 +1,27 @@
-# sitestat
+# Repose
 An elegant and simple GOlang static site generator.
 
-## Options
-* init    - Initialize a new Repose project
-* new     - Create new content. 
-            _Usage: reposenew [CONTENTTYPE] [FILENAME]_
-* demo    - Generate demo content
-* build   - Build the site. 
-            _Options: -r [ROOT], -c [CONFIG]_
-* preview - Setup a local server to preview the site
-* help    - Show the commands available
+## Commands:
+Usage: repose [OPTIONS] <COMMAND>
+
+Commands:
+	init    - Initialize a new Repose project
+	new     - Create new content. Usage: repose new [CONTENTTYPE] [FILENAME]
+	build   - Build the site.
+	preview*- Setup a local server to preview the site (*not implemented)
+	demo*   - Generate demo content (*not implemented)
+	update* - Update the repose binary (*not implemented)
+	help    - Show this help message 
+	
+Options:
+	-r, --root <ROOT> Directory to use as root of project (default: ./)
+	-c, --config <CONFIG> Path to configuration file (default: config.yml)
 
 ### To build the command
 ```
-go build .
+go build
 ```
-
-
-
-# Sub modules
-Link to docs
+However, we can create a smaller binary with this command:
+```
+go build -ldflags="-s -w"
+```
