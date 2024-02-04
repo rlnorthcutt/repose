@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -27,10 +26,20 @@ var command Command
 
 // Initializes a new Repose project.
 // It creates the proper folder structure and starter files.
-// @TODO: modffy this to ask the user for config values
 func (c *Command) Init() string {
+	configFile := "config.yml"
+	if c.rootPath != "" {
+		configFile = c.rootPath + "/config.yml"
+	}
+
+	// Check if the config.yml file already exists
+	if filesystem.Exists(configFile) {
+		logger.Fatal("Warning: The config file exists at %s. Please choose a new root directory.", configFile)
+	}
+
+	// Create the project files
 	if err := c.createNewProjectFiles(c.rootPath); err != nil {
-		log.Fatal("Error creating site structure: ", err)
+		logger.Fatal("Error creating site structure: ", err)
 	}
 	return ""
 }
@@ -91,7 +100,7 @@ func (c *Command) Help() string {
 	return ""
 }
 
-// @TODO: see if we can now remove this
+// @TODO: see if we can now refactor this
 func (c *Command) SetRootPath(path string) {
 	c.rootPath = path
 }
@@ -272,11 +281,12 @@ func (c *Command) openFileInEditor(editor, filePath string) error {
 func (c *Command) initConfig(installDir string) error {
 	sitename := c.promptForInput("Enter the site name", "Repose site")
 	author := c.promptForInput("Enter the author's name", "Creator")
-	editor := c.promptForInput("Enter the editor", "nano")
-	contentDirectory := c.promptForInput("Enter the content directory", "content")
-	outputDirectory := c.promptForInput("Enter the output directory", "web")
+	editor := c.promptForInput("Enter the editor ('none' for no editing)", "nano")
+	// contentDirectory := c.promptForInput("Enter the content directory", "content")
+	// outputDirectory := c.promptForInput("Enter the output directory", "web")
 	url := c.promptForInput("Enter the site URL", "mysite.com")
-	previewUrl := c.promptForInput("Enter the preview URL", "http://localhost:8080")
+	theme := c.promptForInput("Enter the CSS theme to use (picocss, bootstrap, tailwind, none)", "picocss")
+	// previewUrl := c.promptForInput("Enter the preview URL", "http://localhost:8080")
 
 	configContent := fmt.Sprintf(`sitename: %s
 author: %s
@@ -285,7 +295,8 @@ contentDirectory: %s
 outputDirectory: %s
 url: %s
 previewUrl: %s
-`, sitename, author, editor, contentDirectory, outputDirectory, url, previewUrl)
+theme: %s
+`, sitename, author, editor, "content", "web", url, "http://localhost:8080", theme)
 
 	// Create the filepath
 	if installDir != "" {

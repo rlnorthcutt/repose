@@ -26,6 +26,9 @@ type Config struct {
 	// PreviewURL is the URL for the local preview server
 	// Defaults to "http://localhost:8080"
 	PreviewURL string `yaml:"previewUrl"`
+	// Theme is the theme to use for the site
+	// Defaults to picocss, but can be bootstrap or tailwind
+	Theme string `yaml:"theme"`
 }
 
 // Create a global config variable so it can be accessed from anywhere

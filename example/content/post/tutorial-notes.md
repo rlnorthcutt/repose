@@ -21,3 +21,11 @@
 
 
 Config system improved using this guide: https://dev.to/koddr/let-s-write-config-for-your-golang-web-app-on-right-way-yaml-5ggp
+
+Using custom yml parser instead of yaml library
+ - cut 0.8M (3.3 -> 2.5)
+
+Build with thee flags to reduce size:https://gophercoding.com/reduce-go-binary-size/
+also https://github.com/xaionaro/documentation/blob/master/golang/reduce-binary-size.md
+go build -ldflags="-s -w"
+- cut 0.8M (2.5 -> 1.7)
