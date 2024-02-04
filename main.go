@@ -21,9 +21,11 @@ type Config struct {
 	// OutputDirectory is the directory where the generated site is stored
 	// Defaults to "web"
 	OutputDirectory string `yaml:"outputDirectory"`
-	// URL is the bsae URL for the local server
-	// Defaults to "http://localhost:8080"
+	// URL is the URL for the site
 	URL string `yaml:"url"`
+	// PreviewURL is the URL for the local preview server
+	// Defaults to "http://localhost:8080"
+	PreviewURL string `yaml:"previewUrl"`
 }
 
 // Create a global config variable so it can be accessed from anywhere
@@ -56,8 +58,7 @@ func main() {
 		var err error
 		config, err = readConfig(configPath)
 		if err != nil {
-			//logger.Fatal("Error reading config: %v", err)
-			logger.Info("No config file found. You need to run `repose init` first.")
+			logger.Warn("No config file found. You need to run `repose init` first.")
 			os.Exit(0)
 		}
 	}

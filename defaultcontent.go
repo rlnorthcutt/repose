@@ -23,17 +23,18 @@ author: Creator
 editor: nano
 contentDirectory: content
 outputDirectory: web
-url: http://localhost:8080`
+url: mysite.com
+previewUrl: http://localhost:8080`
 
 const NewMD = `---
-title: "{title}"
-description: "{contentType} about {title}"
+title: {title}
+description: {contentType} about {title}
 tags: []
 image: 
 index: true
-author: "{author}"
+author: {author}
 publish_date: 
-template: "{contentType}.tmpl"
+template: {contentType}.tmpl
 ---
 	
 # {title}

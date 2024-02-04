@@ -39,8 +39,11 @@ func (c *Command) Init() string {
 // It requires two arguments: content type and filename.
 // The content type defines the path, so it can also include a subfolder
 func (c *Command) New(config Config) {
-	if len(os.Args) != 4 {
-		logger.Info("Usage: repose new [CONTENTTYPE] [FILENAME]")
+	if len(os.Args) < 4 {
+		logger.Warn("Missing arguments. Usage: repose new [CONTENTTYPE] [FILENAME]")
+		return
+	} else if len(os.Args) > 4 {
+		logger.Warn("File name cannot contain spaces. Usage: repose new [CONTENTTYPE] [FILENAME]")
 		return
 	}
 
@@ -67,6 +70,7 @@ func (c *Command) Build(config Config) {
 	if err := builder.BuildSite(); err != nil {
 		fmt.Println("Error building site:", err)
 	}
+	logger.Success("Site built successfully")
 }
 
 // Starts serving the Repose site for local preview.
@@ -132,6 +136,11 @@ func (c *Command) defaultContent(contentType string, title string) string {
 
 // createNewProjectFiles creates the default files and directories for a new project.
 func (c *Command) createNewProjectFiles(rootPath string) error {
+	// Create the config file
+	if err := c.initConfig(rootPath); err != nil {
+		return err
+	}
+
 	// Set the output for the root path
 	installDir := rootPath
 	if rootPath == "" {
@@ -156,7 +165,6 @@ func (c *Command) createNewProjectFiles(rootPath string) error {
 		Name    string
 		Content string
 	}{
-		{"config.yml", DefaultConfig},
 		{"template/default.tmpl", DefaultTemplate},
 		{"template/page.tmpl", PageTemplate},
 		{"template/header.tmpl", HeaderTemplate},
@@ -173,7 +181,7 @@ func (c *Command) createNewProjectFiles(rootPath string) error {
 		}
 	}
 
-	logger.Info("Repose project created in %s", installDir)
+	logger.Success("Repose project created in %s", installDir)
 
 	return nil
 }
@@ -200,7 +208,7 @@ func (c *Command) createNewContent(config Config, typeDirectory, fileNameParam s
 		return fmt.Errorf("failed to create %s: %v", path, err)
 	}
 
-	logger.Info("Successfully created new %s: %s\n", contentType, path)
+	logger.Success("Successfully created new %s: %s\n", contentType, path)
 
 	// Check if the template exists
 	templateName := contentType + ".tmpl"
@@ -233,12 +241,12 @@ func (c *Command) createNewContent(config Config, typeDirectory, fileNameParam s
 				logger.Error("Error creating template:", err)
 				return nil
 			}
-			fmt.Println("Template created successfully.")
 		}
+		logger.Success("Template created successfully.")
 	}
 
 	// Check if the editor is set and not empty, then open the file with it
-	if config.Editor != "" {
+	if config.Editor != "" || config.Editor == "none" {
 		if err := c.openFileInEditor(config.Editor, path); err != nil {
 			// Log the error but do not fail the entire operation
 			logger.Error("Failed to open file in editor: %v", err)
@@ -259,4 +267,56 @@ func (c *Command) openFileInEditor(editor, filePath string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+func (c *Command) initConfig(installDir string) error {
+	sitename := c.promptForInput("Enter the site name", "Repose site")
+	author := c.promptForInput("Enter the author's name", "Creator")
+	editor := c.promptForInput("Enter the editor", "nano")
+	contentDirectory := c.promptForInput("Enter the content directory", "content")
+	outputDirectory := c.promptForInput("Enter the output directory", "web")
+	url := c.promptForInput("Enter the site URL", "mysite.com")
+	previewUrl := c.promptForInput("Enter the preview URL", "http://localhost:8080")
+
+	configContent := fmt.Sprintf(`sitename: %s
+author: %s
+editor: %s
+contentDirectory: %s
+outputDirectory: %s
+url: %s
+previewUrl: %s
+`, sitename, author, editor, contentDirectory, outputDirectory, url, previewUrl)
+
+	// Create the filepath
+	if installDir != "" {
+		installDir = installDir + "/"
+	}
+	configPath := installDir + "config.yml"
+
+	// Write the configContent to config.yml
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		fmt.Println("Error writing config file:", err)
+		return err
+	}
+
+	fmt.Println("Config initialized successfully.")
+	return nil
+}
+
+func (c *Command) promptForInput(prompt, defaultValue string) string {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Printf("%s [%s]: ", prompt, defaultValue)
+
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("Error reading input:", err)
+		return defaultValue
+	}
+
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return defaultValue
+	}
+
+	return input
 }

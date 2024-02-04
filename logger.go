@@ -14,7 +14,7 @@ var logger Logger
 // **********  Logger methods  ****************************************
 
 // INFO method for the logger type
-// This method formats and prints an info message with green color
+// This method formats and prints an info message with cyan color
 func (l *Logger) Info(message string, value ...any) {
 	tag := "\u001B[0;36m[INFO]\u001B[0;39m "
 	fmt.Printf(tag+message+"\n", value...)
@@ -40,4 +40,11 @@ func (l *Logger) Fatal(message string, value ...any) {
 	tag := "\u001B[0;31m[FATAL]\u001B[0;39m "
 	fmt.Printf(tag+message+"\n", value...)
 	os.Exit(1)
+}
+
+// SUCCESS method for the logger type
+// This method formats and prints a success message with green color
+func (l *Logger) Success(message string, value ...any) {
+	tag := "\u001B[1;32m[SUCCESS]\u001B[0;39m "
+	fmt.Printf(tag+message+"\n", value...)
 }
