@@ -6,6 +6,7 @@ import (
 	"os"
 )
 
+// @TODO: Move this to a separate config.go file
 // Config struct to hold the configuration values
 type Config struct {
 	// Sitename is name of the site - funny right?
@@ -59,7 +60,7 @@ func main() {
 	switch commandName {
 	case "new", "build", "preview":
 		var err error
-		config, err = readConfig(configPath)
+		config, err = config.ReadConfig()
 		if err != nil {
 			logger.Warn("No config file found. You need to run `repose init` first.")
 			os.Exit(0)
@@ -68,7 +69,33 @@ func main() {
 
 	// Dispatch the command
 	dispatchCommand(commandName, config)
+}
 
+// readSiteConfig reads the site configuration from the config file
+// We use this instead of loading the YAML modules to keep the size down
+func (c *Config) ReadConfig() (Config, error) {
+	// Read the entire config file content
+	data, err := os.ReadFile(command.configPath)
+	if err != nil {
+		return Config{}, err
+	}
+
+	// Use readYAML to parse the content
+	yamlMap, err := filesystem.ParseYml(string(data))
+	if err != nil {
+		return Config{}, err
+	}
+
+	// Populate the Config struct with data from the map
+	config.Sitename = yamlMap["sitename"]
+	config.Author = yamlMap["author"]
+	config.Editor = yamlMap["editor"]
+	config.ContentDirectory = yamlMap["contentDirectory"]
+	config.OutputDirectory = yamlMap["outputDirectory"]
+	config.URL = yamlMap["url"]
+	config.Theme = yamlMap["theme"]
+
+	return config, nil
 }
 
 // **********  Private Main methods  **********
@@ -95,32 +122,6 @@ func parseFlags() (string, string, error) {
 
 	// Return the configuration and root paths
 	return configPath, rootPath, nil
-}
-
-// readSiteConfig reads the site configuration from the config file
-// We use this instead of loading the YAML modules to keep the size down
-func readConfig(configPath string) (Config, error) {
-	// Read the entire config file content
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return Config{}, err
-	}
-
-	// Use readYAML to parse the content
-	yamlMap, err := filesystem.ParseYml(string(data))
-	if err != nil {
-		return Config{}, err
-	}
-
-	// Populate the Config struct with data from the map
-	config.Sitename = yamlMap["sitename"]
-	config.Author = yamlMap["author"]
-	config.Editor = yamlMap["editor"]
-	config.ContentDirectory = yamlMap["contentDirectory"]
-	config.OutputDirectory = yamlMap["outputDirectory"]
-	config.URL = yamlMap["url"]
-
-	return config, nil
 }
 
 // dispatchCommand will take the command name and dispatch it to the correct function

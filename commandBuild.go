@@ -18,6 +18,7 @@ type PageData struct {
 	Content  template.HTML
 	Template string
 	Metadata map[string]interface{}
+	Logo     template.HTML
 }
 
 // Defining a new public type 'Template'
@@ -28,8 +29,8 @@ var builder Builder
 
 func (b *Builder) BuildSite() error {
 	// Define your base directories
-	contentDir := "./content"
-	webDir := "./web"
+	contentDir := "./" + config.ContentDirectory
+	webDir := "./" + config.OutputDirectory
 	templateDir := "./template"
 
 	// Parse templates
@@ -125,6 +126,7 @@ func (b *Builder) processMarkdownFile(filePath, contentDir, webDir string, tmpl 
 		Content:  template.HTML(htmlContent),
 		Metadata: metadata,
 		Template: templateFile,
+		Logo:     template.HTML(logoWhite100), // Convert the SVG string to template.HTML
 	}
 
 	return tmpl.ExecuteTemplate(outputFile, "page.tmpl", pageData)

@@ -168,17 +168,28 @@ func (c *Command) createNewProjectFiles(rootPath string) error {
 		}
 	}
 
+	// Read the new config file
+	config, _ = config.ReadConfig()
+
+	// Make sure the theme is set
+	if config.Theme == "" {
+		config.Theme = "none"
+	}
+
+	// Get the template constant map
+	templateContents := c.getTemplateContents()
+
 	// Create the default files
 	indexMD := c.defaultContent("default", "Your homepage")
 	files := []struct {
 		Name    string
 		Content string
 	}{
-		{"template/default.tmpl", DefaultTemplate},
-		{"template/page.tmpl", PageTemplate},
-		{"template/header.tmpl", HeaderTemplate},
-		{"template/navigation.tmpl", NavigationTemplate},
-		{"template/footer.tmpl", FooterTemplate},
+		{"template/default.tmpl", templateContents["default"][config.Theme]},
+		{"template/page.tmpl", templateContents["page"][config.Theme]},
+		{"template/header.tmpl", templateContents["header"][config.Theme]},
+		{"template/navigation.tmpl", templateContents["navigation"][config.Theme]},
+		{"template/footer.tmpl", templateContents["footer"][config.Theme]},
 		{"content/index.md", indexMD},
 		{"content/test.md", MarkdownTest},
 	}
@@ -246,7 +257,8 @@ func (c *Command) createNewContent(config Config, typeDirectory, fileNameParam s
 		if strings.ToLower(response) == "yes" {
 			logger.Info("Creating template file: %s", templateName)
 			path := "template/" + templateName
-			if err := filesystem.Create(path, DefaultTemplate); err != nil {
+			template := "DefaultTemplate_" + config.Theme
+			if err := filesystem.Create(path, template); err != nil {
 				logger.Error("Error creating template:", err)
 				return nil
 			}
@@ -285,7 +297,7 @@ func (c *Command) initConfig(installDir string) error {
 	// contentDirectory := c.promptForInput("Enter the content directory", "content")
 	// outputDirectory := c.promptForInput("Enter the output directory", "web")
 	url := c.promptForInput("Enter the site URL", "mysite.com")
-	theme := c.promptForInput("Enter the CSS theme to use (picocss, bootstrap, tailwind, none)", "picocss")
+	theme := c.promptForInput("Enter the CSS theme to use (pico, bootstrap, tailwind, none)", "pico")
 	// previewUrl := c.promptForInput("Enter the preview URL", "http://localhost:8080")
 
 	configContent := fmt.Sprintf(`sitename: %s
@@ -311,6 +323,7 @@ theme: %s
 	}
 
 	fmt.Println("Config initialized successfully.")
+
 	return nil
 }
 
@@ -330,4 +343,39 @@ func (c *Command) promptForInput(prompt, defaultValue string) string {
 	}
 
 	return input
+}
+
+func (c *Command) getTemplateContents() map[string]map[string]string {
+	return map[string]map[string]string{
+		"default": {
+			"pico":      DefaultTemplate_pico,
+			"bootstrap": DefaultTemplate_bootstrap,
+			"tailwind":  DefaultTemplate_tailwind,
+			"none":      DefaultTemplate_none,
+		},
+		"page": {
+			"pico":      PageTemplate_pico,
+			"bootstrap": PageTemplate_bootstrap,
+			"tailwind":  PageTemplate_tailwind,
+			"none":      PageTemplate_none,
+		},
+		"header": {
+			"pico":      HeaderTemplate_pico,
+			"bootstrap": HeaderTemplate_bootstrap,
+			"tailwind":  HeaderTemplate_tailwind,
+			"none":      HeaderTemplate_none,
+		},
+		"navigation": {
+			"pico":      NavigationTemplate_pico,
+			"bootstrap": NavigationTemplate_bootstrap,
+			"tailwind":  NavigationTemplate_tailwind,
+			"none":      NavigationTemplate_none,
+		},
+		"footer": {
+			"pico":      FooterTemplate_pico,
+			"bootstrap": FooterTemplate_bootstrap,
+			"tailwind":  FooterTemplate_tailwind,
+			"none":      FooterTemplate_none,
+		},
+	}
 }
