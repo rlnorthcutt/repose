@@ -39,16 +39,31 @@ func (b *Builder) BuildSite() error {
 		return err
 	}
 
+	// Initialize a map to track directories
+	dirMap := make(map[string][]os.FileInfo)
+
 	// Walk the content directory
-	return filepath.Walk(contentDir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(contentDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// Skip directories
-		if info.IsDir() {
+		// Skip the root content directory itself
+		if path == contentDir {
 			return nil
 		}
+
+		dir := filepath.Dir(path)
+		if info.IsDir() {
+			// Ensure the directory is tracked
+			if _, exists := dirMap[dir]; !exists {
+				dirMap[dir] = []os.FileInfo{}
+			}
+			return nil
+		}
+
+		// Track files in their respective directories
+		dirMap[dir] = append(dirMap[dir], info)
 
 		// Process only markdown files
 		if strings.HasSuffix(path, ".md") {
@@ -58,6 +73,31 @@ func (b *Builder) BuildSite() error {
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	// Generate index.html for directories without one
+	for dir, files := range dirMap {
+		if !b.hasIndexFile(files) {
+			fmt.Println("Generating index.html for", dir)
+			if err := b.generateIndexHTML(dir, files); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// hasIndexFile checks if the given slice of FileInfo contains an index file.
+func (b Builder) hasIndexFile(files []os.FileInfo) bool {
+	for _, file := range files {
+		if file.Name() == "index.md" || file.Name() == "index.html" {
+			return true
+		}
+	}
+	return false
 }
 
 func (b *Builder) processMarkdownFile(filePath, contentDir, webDir string, tmpl *template.Template) error {
@@ -130,4 +170,44 @@ func (b *Builder) processMarkdownFile(filePath, contentDir, webDir string, tmpl 
 	}
 
 	return tmpl.ExecuteTemplate(outputFile, "page.tmpl", pageData)
+}
+
+func (b *Builder) generateIndexHTML(dirPath string, items []os.FileInfo) error {
+	// Calculate the relative path of dirPath from the content directory
+	// @TODO : change command rootpath to always default with trailing slash
+	// @TODO : check where paths are being created, and change them to filepath.join
+	if command.rootPath == "" {
+		command.rootPath = "."
+	}
+	contentDir := filepath.Join(command.rootPath, "content")
+	relPath, err := filepath.Rel(contentDir, dirPath)
+	if err != nil {
+		return err // Handle the error appropriately
+	}
+
+	// Construct the output path by joining the root path, output directory, and the relative path
+	outputPath := filepath.Join(command.rootPath, config.OutputDirectory, relPath)
+
+	// Ensure the output directory exists
+	if err := os.MkdirAll(outputPath, 0755); err != nil {
+		return err
+	}
+
+	indexPath := filepath.Join(outputPath, "index.html")
+	var links []string
+
+	for _, item := range items {
+		if item.IsDir() {
+			continue // Skip directories
+		}
+		itemName := item.Name()
+		// Assuming you convert .md files to .html
+		if strings.HasSuffix(itemName, ".md") {
+			itemName = strings.TrimSuffix(itemName, ".md") + ".html"
+		}
+		links = append(links, "<li><a href=\""+itemName+"\">"+itemName+"</a></li>")
+	}
+
+	htmlContent := "<html><body><ul>" + strings.Join(links, "") + "</ul></body></html>"
+	return os.WriteFile(indexPath, []byte(htmlContent), 0644)
 }
