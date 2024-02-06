@@ -8,9 +8,7 @@ Commands:
 	init    - Initialize a new Repose project
 	new     - Create new content. Usage: repose new [CONTENTTYPE] [FILENAME]
 	build   - Build the site.
-	preview*- Setup a local server to preview the site (*not implemented)
-	demo*   - Generate demo content (*not implemented)
-	update* - Update the repose binary (*not implemented)
+	preview - Setup a local server to preview the site
 	help    - Show this help message 
 	
 Options:

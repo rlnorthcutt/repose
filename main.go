@@ -94,6 +94,7 @@ func (c *Config) ReadConfig() (Config, error) {
 	config.OutputDirectory = yamlMap["outputDirectory"]
 	config.URL = yamlMap["url"]
 	config.Theme = yamlMap["theme"]
+	config.PreviewURL = yamlMap["previewUrl"]
 
 	return config, nil
 }

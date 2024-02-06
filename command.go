@@ -3,9 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -83,9 +85,38 @@ func (c *Command) Build(config Config) {
 }
 
 // Starts serving the Repose site for local preview.
-func (c *Command) Preview(config Config) string {
-	fmt.Printf("Repose site")
-	return ""
+func (c *Command) Preview(config Config) {
+	logger.Info("Setting up the local preview server")
+
+	// Define the directory to serve.
+	if c.rootPath == "" {
+		c.rootPath = "."
+	}
+	webDir := c.rootPath + "/" + config.OutputDirectory
+
+	// Setup the HTTP server.
+	fs := http.FileServer(http.Dir(webDir))
+	http.Handle("/", fs)
+
+	// Start the server in a new goroutine so it doesn't block opening the browser.
+	go func() {
+		if err := http.ListenAndServe(":8080", nil); err != nil {
+			logger.Error("Error starting server:", err)
+			panic(err)
+		}
+	}()
+
+	logger.Info("Preview server ready at %s/index.html", config.PreviewURL)
+	fmt.Println("Press Ctrl+C to stop the server")
+
+	// Give the server a moment to start.
+	time.Sleep(500 * time.Millisecond)
+
+	// Open the browser.
+	c.openBrowser(config.PreviewURL + "/index.html")
+
+	// Keep the server running.
+	select {}
 }
 
 // Updates the Repose binary in the current directory
@@ -281,8 +312,8 @@ func (c *Command) createNewContent(config Config, typeDirectory, fileNameParam s
 // openFileInEditor opens the specified file in the given editor.
 func (c *Command) openFileInEditor(editor, filePath string) error {
 	logger.Info("Opening file in editor: %s", editor)
-	// Pause for 1 second before opening the editor
-	time.Sleep(1 * time.Second)
+	// Pause for a moment before opening the editor
+	time.Sleep(500 * time.Millisecond)
 
 	cmd := exec.Command(editor, filePath)
 	cmd.Stdin = os.Stdin
@@ -384,5 +415,25 @@ func (c *Command) getTemplateContents() map[string]map[string]string {
 			"tailwind":  css_tailwind,
 			"none":      css_none,
 		},
+	}
+}
+
+// openBrowser tries to open the browser with a given URL.
+func (c *Command) openBrowser(url string) {
+	var err error
+
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+
+	if err != nil {
+		fmt.Printf("Failed to open the browser: %v\n", err)
 	}
 }
