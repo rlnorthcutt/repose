@@ -126,7 +126,7 @@ func (b *Builder) processMarkdownFile(filePath, contentDir, webDir string, tmpl 
 		Content:  template.HTML(htmlContent),
 		Metadata: metadata,
 		Template: templateFile,
-		Logo:     template.HTML(logoWhite100), // Convert the SVG string to template.HTML
+		Logo:     template.HTML(logo50), // Convert the SVG string to template.HTML
 	}
 
 	return tmpl.ExecuteTemplate(outputFile, "page.tmpl", pageData)

@@ -14,6 +14,7 @@ const PageTemplate_tailwind = `<!-- page.tmpl -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <title>{{ .Title }}</title>
+    <link rel="stylesheet" href="/asset/css/styles.css">
 </head>
 <body>
     {{ template "header.tmpl" . }}
@@ -47,4 +48,8 @@ const FooterTemplate_tailwind = `<!-- footer.tmpl -->
 <footer>
     <p>&copy; 2024 Site Name. All rights reserved.</p>
 </footer>
+`
+
+const css_tailwind = `/* styles.css */
+    
 `

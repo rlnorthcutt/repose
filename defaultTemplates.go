@@ -13,6 +13,7 @@ const PageTemplate_none = `<!-- page.tmpl -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .Title }}</title>
+    <link rel="stylesheet" href="/asset/css/styles.css">
 </head>
 <body>
     {{ template "header.tmpl" . }}
@@ -46,4 +47,7 @@ const FooterTemplate_none = `<!-- footer.tmpl -->
 <footer>
     <p>&copy; 2024 Site Name. All rights reserved.</p>
 </footer>
+`
+const css_none = `/* styles.css */
+    
 `

@@ -15,37 +15,44 @@ const PageTemplate_bootstrap = `<!-- page.tmpl -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <title>{{ .Title }}</title>
+    <link rel="stylesheet" href="/asset/css/styles.css">
 </head>
 <body>
     {{ template "header.tmpl" . }}
-    {{ template "navigation.tmpl" . }}
-    <div class="main container">
+    <main class="main container">
         {{ template "default.tmpl" . }}
-    </div>
+    </main>
     {{ template "footer.tmpl" . }}
 </body>
 </html>
 `
 
 const HeaderTemplate_bootstrap = `<!-- header.tmpl -->
-<header>
-    <h1>Site Logo Here</h1>
-    <h2>{{ .SiteName }}</h2>
-</header>
+<div class="px-4">
+    <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
+      <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+        {{ .Logo }}  
+        <span class="fs-4 mx-3">{{ .Title }}</span>
+      </a>
+
+      {{ template "navigation.tmpl" . }}
+    </header>
+</div>
 `
 
 const NavigationTemplate_bootstrap = `<!-- navigation.tmpl -->
-<nav>
-    <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="/about">About Us</a></li>
-        <li><a href="/contact">Contact</a></li>
-    </ul>
-</nav>
+<ul class="nav nav-pills">
+    <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
+    <li class="nav-item"><a href="/test.html" class="nav-link">Test page</a></li>
+    <li class="nav-item"><a href="#" class="nav-link">About</a></li>
+</ul>
 `
 
 const FooterTemplate_bootstrap = `<!-- footer.tmpl -->
-<footer>
+<footer class="pt-5 my-5 text-muted border-top container">
     <p>&copy; 2024 Site Name. All rights reserved.</p>
 </footer>
+`
+const css_bootstrap = `/* styles.css */
+
 `

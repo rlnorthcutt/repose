@@ -171,8 +171,8 @@ func (c *Command) createNewProjectFiles(rootPath string) error {
 	// Read the new config file
 	config, _ = config.ReadConfig()
 
-	// Make sure the theme is set
-	if config.Theme == "" {
+	// Make sure the theme is set to "none" if it's not "pico", "bootstrap", or "tailwind"
+	if config.Theme != "pico" && config.Theme != "bootstrap" && config.Theme != "tailwind" {
 		config.Theme = "none"
 	}
 
@@ -192,6 +192,7 @@ func (c *Command) createNewProjectFiles(rootPath string) error {
 		{"template/footer.tmpl", templateContents["footer"][config.Theme]},
 		{"content/index.md", indexMD},
 		{"content/test.md", MarkdownTest},
+		{"web/asset/css/styles.css", templateContents["css"][config.Theme]},
 	}
 	for _, f := range files {
 		filePath := filepath.Join(rootPath, f.Name)
@@ -376,6 +377,12 @@ func (c *Command) getTemplateContents() map[string]map[string]string {
 			"bootstrap": FooterTemplate_bootstrap,
 			"tailwind":  FooterTemplate_tailwind,
 			"none":      FooterTemplate_none,
+		},
+		"css": {
+			"pico":      css_pico,
+			"bootstrap": css_bootstrap,
+			"tailwind":  css_tailwind,
+			"none":      css_none,
 		},
 	}
 }
