@@ -6,6 +6,16 @@ const DefaultTemplate_bootstrap = `<!-- default.tmpl -->
 </article>
 `
 
+const ListTemplate_bootstrap = `<!-- list.tmpl -->
+<article>
+    <ul>
+    {{ range .Links }}
+    <li><a href="{{ . }}">{{ . }}</a></li>
+    {{ end }}
+    </ul>
+</article>
+`
+
 const PageTemplate_bootstrap = `<!-- page.tmpl -->
 <!DOCTYPE html>
 <html lang="en">
@@ -20,7 +30,7 @@ const PageTemplate_bootstrap = `<!-- page.tmpl -->
 <body>
     {{ template "header.tmpl" . }}
     <main class="main container">
-        {{ template "default.tmpl" . }}
+        {{ template .ContentTemplateName . }}
     </main>
     {{ template "footer.tmpl" . }}
 </body>

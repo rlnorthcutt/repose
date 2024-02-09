@@ -21,7 +21,7 @@ var AppConfig Config
 
 func main() {
     var err error
-    AppConfig, err = readConfig("config.yml")
+    AppConfig, err = config.Read()
     if err != nil {
         log.Fatalf("Error reading config: %v", err)
     }

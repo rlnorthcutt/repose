@@ -6,6 +6,16 @@ const DefaultTemplate_none = `<!-- default.tmpl -->
 </article>
 `
 
+const ListTemplate_none = `<!-- list.tmpl -->
+<article>
+    <ul>
+    {{ range .Links }}
+    <li><a href="{{ . }}">{{ . }}</a></li>
+    {{ end }}
+    </ul>
+</article>
+`
+
 const PageTemplate_none = `<!-- page.tmpl -->
 <!DOCTYPE html>
 <html lang="en">
@@ -19,7 +29,7 @@ const PageTemplate_none = `<!-- page.tmpl -->
     {{ template "header.tmpl" . }}
     {{ template "navigation.tmpl" . }}
     <div class="main container">
-        {{ template "default.tmpl" . }}
+        {{ template .ContentTemplateName . }}
     </div>
     {{ template "footer.tmpl" . }}
 </body>
@@ -48,6 +58,7 @@ const FooterTemplate_none = `<!-- footer.tmpl -->
     <p>&copy; 2024 Site Name. All rights reserved.</p>
 </footer>
 `
+
 const css_none = `/* styles.css */
     
 `

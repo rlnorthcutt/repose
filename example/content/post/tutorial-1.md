@@ -54,7 +54,6 @@ Repose is a command line tool for managing your static site.
 
 Build options:
     -r, --root <ROOT> Directory to use as root of project (default: .)
-    -c, --config <CONFIG> Path to configuration file (default: config.yml)
 
 ## Why another static site gnerator?
 - simpler format

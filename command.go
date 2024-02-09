@@ -17,8 +17,10 @@ import (
 
 // Defining a new public type 'Command'
 type Command struct {
-	rootPath   string
-	configPath string
+	rootPath    string
+	contentDir  string
+	outputDir   string
+	templateDir string
 }
 
 // Defining a global varaiable for Command
@@ -29,9 +31,9 @@ var command Command
 // Initializes a new Repose project.
 // It creates the proper folder structure and starter files.
 func (c *Command) Init() string {
-	configFile := "config.yml"
+	configFile := ConfigFile
 	if c.rootPath != "" {
-		configFile = c.rootPath + "/config.yml"
+		configFile = filepath.Join(c.rootPath, ConfigFile)
 	}
 
 	// Check if the config.yml file already exists
@@ -40,7 +42,7 @@ func (c *Command) Init() string {
 	}
 
 	// Create the project files
-	if err := c.createNewProjectFiles(c.rootPath); err != nil {
+	if err := initCommand.CreateNewProjectFiles(c.rootPath); err != nil {
 		logger.Fatal("Error creating site structure: ", err)
 	}
 	return ""
@@ -77,8 +79,8 @@ func (c *Command) Demo() string {
 // It uses command-line flags to modify the root directory and config file.
 // If there is an error parsing the command flags, it prints an error message.
 func (c *Command) Build(config Config) {
-	logger.Info("Building site from %s with config %s\n", c.rootPath, c.configPath)
-	if err := builder.BuildSite(); err != nil {
+	logger.Info("Building site from %s with config %s\n", c.rootPath, ConfigFile)
+	if err := buildCommand.BuildSite(); err != nil {
 		fmt.Println("Error building site:", err)
 	}
 	logger.Success("Site built successfully")
@@ -92,7 +94,7 @@ func (c *Command) Preview(config Config) {
 	if c.rootPath == "" {
 		c.rootPath = "."
 	}
-	webDir := c.rootPath + "/" + config.OutputDirectory
+	webDir := filepath.Join(c.rootPath, config.OutputDirectory)
 
 	// Setup the HTTP server.
 	fs := http.FileServer(http.Dir(webDir))
@@ -107,7 +109,7 @@ func (c *Command) Preview(config Config) {
 	}()
 
 	logger.Info("Preview server ready at %s/index.html", config.PreviewURL)
-	fmt.Println("Press Ctrl+C to stop the server")
+	logger.Plain("Press Ctrl+C to stop the server")
 
 	// Give the server a moment to start.
 	time.Sleep(500 * time.Millisecond)
@@ -125,19 +127,19 @@ func (c *Command) Update() string {
 	return ""
 }
 
+// Displays the help text for the command-line tool
 func (c *Command) Help() string {
 	response := HelpText
 	logger.Info(response)
 	return ""
 }
 
-// @TODO: see if we can now refactor this
+// Set the root path and comomon directories for commands
 func (c *Command) SetRootPath(path string) {
 	c.rootPath = path
-}
-
-func (c *Command) SetConfigPath(path string) {
-	c.configPath = path
+	c.contentDir = filepath.Join(path, config.ContentDirectory)
+	c.outputDir = filepath.Join(path, config.OutputDirectory)
+	c.templateDir = filepath.Join(path, "template")
 }
 
 // **********  Private Command Methods  **********
@@ -174,71 +176,8 @@ func (c *Command) defaultContent(contentType string, title string) string {
 	return content
 }
 
-// createNewProjectFiles creates the default files and directories for a new project.
-func (c *Command) createNewProjectFiles(rootPath string) error {
-	// Create the config file
-	if err := c.initConfig(rootPath); err != nil {
-		return err
-	}
-
-	// Set the output for the root path
-	installDir := rootPath
-	if rootPath == "" {
-		installDir = "this directory"
-	}
-
-	// Create the project directory structure
-	logger.Info("Creating new project in %s", installDir)
-	dirs := []string{"content", "template", "web", "web/asset", "web/asset/css", "web/asset/js", "web/asset/img"}
-	for _, dir := range dirs {
-		dirPath := filepath.Join(rootPath, dir)
-		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
-			if err := os.Mkdir(dirPath, 0755); err != nil {
-				return err
-			}
-		}
-	}
-
-	// Read the new config file
-	config, _ = config.ReadConfig()
-
-	// Make sure the theme is set to "none" if it's not "pico", "bootstrap", or "tailwind"
-	if config.Theme != "pico" && config.Theme != "bootstrap" && config.Theme != "tailwind" {
-		config.Theme = "none"
-	}
-
-	// Get the template constant map
-	templateContents := c.getTemplateContents()
-
-	// Create the default files
-	indexMD := c.defaultContent("default", "Your homepage")
-	files := []struct {
-		Name    string
-		Content string
-	}{
-		{"template/default.tmpl", templateContents["default"][config.Theme]},
-		{"template/page.tmpl", templateContents["page"][config.Theme]},
-		{"template/header.tmpl", templateContents["header"][config.Theme]},
-		{"template/navigation.tmpl", templateContents["navigation"][config.Theme]},
-		{"template/footer.tmpl", templateContents["footer"][config.Theme]},
-		{"content/index.md", indexMD},
-		{"content/test.md", MarkdownTest},
-		{"web/asset/css/styles.css", templateContents["css"][config.Theme]},
-	}
-	for _, f := range files {
-		filePath := filepath.Join(rootPath, f.Name)
-		cleanContent := strings.TrimSpace(f.Content)
-		if err := filesystem.Create(filePath, cleanContent); err != nil {
-			return err
-		}
-	}
-
-	logger.Success("Repose project created in %s", installDir)
-
-	return nil
-}
-
 // createNewContent creates a new content file in the specified directory.
+// @TODO refactor this and break into 2-3 methods
 func (c *Command) createNewContent(config Config, typeDirectory, fileNameParam string) error {
 	fileName, title := c.processFileName(fileNameParam)
 
@@ -260,7 +199,7 @@ func (c *Command) createNewContent(config Config, typeDirectory, fileNameParam s
 		return fmt.Errorf("failed to create %s: %v", path, err)
 	}
 
-	logger.Success("Successfully created new %s: %s\n", contentType, path)
+	logger.Success("Successfully created new %s: %s", contentType, path)
 
 	// Check if the template exists
 	templateName := contentType + ".tmpl"
@@ -272,8 +211,8 @@ func (c *Command) createNewContent(config Config, typeDirectory, fileNameParam s
 
 	// Ask the user to create the template file if it doesn't exist
 	if !found {
-		logger.Warn("Template file not found: %s\n", templateName)
-		fmt.Println("Do you want to create this template? (yes/no)")
+		logger.Warn("Template file not found: %s", templateName)
+		logger.Plain("Do you want to create this template? (Yes/no)")
 
 		// Read the user's response
 		reader := bufio.NewReader(os.Stdin)
@@ -284,9 +223,9 @@ func (c *Command) createNewContent(config Config, typeDirectory, fileNameParam s
 		}
 
 		// Trim whitespace and newline character
-		response = strings.TrimSpace(response)
+		response = strings.ToLower(strings.TrimSpace(response))
 		// If yes, then create the template file
-		if strings.ToLower(response) == "yes" {
+		if response == "yes" || response == "" {
 			logger.Info("Creating template file: %s", templateName)
 			path := "template/" + templateName
 			template := "DefaultTemplate_" + config.Theme
@@ -294,12 +233,12 @@ func (c *Command) createNewContent(config Config, typeDirectory, fileNameParam s
 				logger.Error("Error creating template:", err)
 				return nil
 			}
+			logger.Success("Template created successfully.")
 		}
-		logger.Success("Template created successfully.")
 	}
 
 	// Check if the editor is set and not empty, then open the file with it
-	if config.Editor != "" || config.Editor == "none" {
+	if config.Editor != "" && config.Editor != "none" {
 		if err := c.openFileInEditor(config.Editor, path); err != nil {
 			// Log the error but do not fail the entire operation
 			logger.Error("Failed to open file in editor: %v", err)
@@ -311,7 +250,7 @@ func (c *Command) createNewContent(config Config, typeDirectory, fileNameParam s
 
 // openFileInEditor opens the specified file in the given editor.
 func (c *Command) openFileInEditor(editor, filePath string) error {
-	logger.Info("Opening file in editor: %s", editor)
+	logger.Plain("Opening file in editor: %s", editor)
 	// Pause for a moment before opening the editor
 	time.Sleep(500 * time.Millisecond)
 
@@ -322,50 +261,16 @@ func (c *Command) openFileInEditor(editor, filePath string) error {
 	return cmd.Run()
 }
 
-func (c *Command) initConfig(installDir string) error {
-	sitename := c.promptForInput("Enter the site name", "Repose site")
-	author := c.promptForInput("Enter the author's name", "Creator")
-	editor := c.promptForInput("Enter the editor ('none' for no editing)", "nano")
-	// contentDirectory := c.promptForInput("Enter the content directory", "content")
-	// outputDirectory := c.promptForInput("Enter the output directory", "web")
-	url := c.promptForInput("Enter the site URL", "mysite.com")
-	theme := c.promptForInput("Enter the CSS theme to use (pico, bootstrap, tailwind, none)", "pico")
-	// previewUrl := c.promptForInput("Enter the preview URL", "http://localhost:8080")
-
-	configContent := fmt.Sprintf(`sitename: %s
-author: %s
-editor: %s
-contentDirectory: %s
-outputDirectory: %s
-url: %s
-previewUrl: %s
-theme: %s
-`, sitename, author, editor, "content", "web", url, "http://localhost:8080", theme)
-
-	// Create the filepath
-	if installDir != "" {
-		installDir = installDir + "/"
-	}
-	configPath := installDir + "config.yml"
-
-	// Write the configContent to config.yml
-	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
-		fmt.Println("Error writing config file:", err)
-		return err
-	}
-
-	fmt.Println("Config initialized successfully.")
-
-	return nil
-}
-
+// Helper function to prompt for input in a standard way
 func (c *Command) promptForInput(prompt, defaultValue string) string {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf("%s [%s]: ", prompt, defaultValue)
+
+	// Use this instead of logger.Info to avoid the newline character
+	fmt.Printf("------- %s [%s]: ", prompt, defaultValue)
 
 	input, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("Error reading input:", err)
+		logger.Error("Error reading input:", err)
 		return defaultValue
 	}
 
@@ -375,47 +280,6 @@ func (c *Command) promptForInput(prompt, defaultValue string) string {
 	}
 
 	return input
-}
-
-func (c *Command) getTemplateContents() map[string]map[string]string {
-	return map[string]map[string]string{
-		"default": {
-			"pico":      DefaultTemplate_pico,
-			"bootstrap": DefaultTemplate_bootstrap,
-			"tailwind":  DefaultTemplate_tailwind,
-			"none":      DefaultTemplate_none,
-		},
-		"page": {
-			"pico":      PageTemplate_pico,
-			"bootstrap": PageTemplate_bootstrap,
-			"tailwind":  PageTemplate_tailwind,
-			"none":      PageTemplate_none,
-		},
-		"header": {
-			"pico":      HeaderTemplate_pico,
-			"bootstrap": HeaderTemplate_bootstrap,
-			"tailwind":  HeaderTemplate_tailwind,
-			"none":      HeaderTemplate_none,
-		},
-		"navigation": {
-			"pico":      NavigationTemplate_pico,
-			"bootstrap": NavigationTemplate_bootstrap,
-			"tailwind":  NavigationTemplate_tailwind,
-			"none":      NavigationTemplate_none,
-		},
-		"footer": {
-			"pico":      FooterTemplate_pico,
-			"bootstrap": FooterTemplate_bootstrap,
-			"tailwind":  FooterTemplate_tailwind,
-			"none":      FooterTemplate_none,
-		},
-		"css": {
-			"pico":      css_pico,
-			"bootstrap": css_bootstrap,
-			"tailwind":  css_tailwind,
-			"none":      css_none,
-		},
-	}
 }
 
 // openBrowser tries to open the browser with a given URL.
@@ -434,6 +298,6 @@ func (c *Command) openBrowser(url string) {
 	}
 
 	if err != nil {
-		fmt.Printf("Failed to open the browser: %v\n", err)
+		logger.Error("Failed to open the browser: %v\n", err)
 	}
 }

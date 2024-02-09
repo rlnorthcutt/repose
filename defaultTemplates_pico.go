@@ -6,6 +6,16 @@ const DefaultTemplate_pico = `<!-- default.tmpl -->
 </article>
 `
 
+const ListTemplate_pico = `<!-- list.tmpl -->
+<article>
+    <ul>
+    {{ range .Links }}
+    <li><a href="{{ . }}">{{ . }}</a></li>
+    {{ end }}
+    </ul>
+</article>
+`
+
 const PageTemplate_pico = `<!-- page.tmpl -->
 <!DOCTYPE html>
 <html lang="en">
@@ -19,7 +29,7 @@ const PageTemplate_pico = `<!-- page.tmpl -->
 <body>
     {{ template "header.tmpl" . }}
     <div class="main container">
-        {{ template "default.tmpl" . }}
+        {{ template .ContentTemplateName . }}
     </div>
     {{ template "footer.tmpl" . }}
 </body>

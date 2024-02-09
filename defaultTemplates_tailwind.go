@@ -6,6 +6,16 @@ const DefaultTemplate_tailwind = `<!-- default.tmpl -->
 </article>
 `
 
+const ListTemplate_tailwind = `<!-- list.tmpl -->
+<article>
+    <ul>
+    {{ range .Links }}
+    <li><a href="{{ . }}">{{ . }}</a></li>
+    {{ end }}
+    </ul>
+</article>
+`
+
 const PageTemplate_tailwind = `<!-- page.tmpl -->
 <!DOCTYPE html>
 <html lang="en">
@@ -20,7 +30,7 @@ const PageTemplate_tailwind = `<!-- page.tmpl -->
     {{ template "header.tmpl" . }}
     {{ template "navigation.tmpl" . }}
     <div class="main container">
-        {{ template "default.tmpl" . }}
+        {{ template .ContentTemplateName . }}
     </div>
     {{ template "footer.tmpl" . }}
 </body>
