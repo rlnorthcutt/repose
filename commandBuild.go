@@ -2,13 +2,14 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/russross/blackfriday/v2"
+	"github.com/yuin/goldmark"
+	meta "github.com/yuin/goldmark-meta"
+	"github.com/yuin/goldmark/parser"
 )
 
 // Defining a new public type 'Template'
@@ -19,68 +20,145 @@ var buildCommand Builder
 
 // PageData holds data to pass into templates
 type PageData struct {
-	SiteName            string
-	Title               string
-	Content             template.HTML
-	Template            string
-	Metadata            map[string]interface{}
-	Logo                template.HTML
-	ContentTemplateName string
+	SiteName        string
+	Logo            template.HTML
+	Title           string
+	MdContent       template.HTML
+	TemplateFile    string
+	TemplateContent template.HTML
+	Metadata        map[string]interface{}
+}
+
+// Holds information about a file during processing
+type FileInfo struct {
+	Name        string
+	Path        string
+	ContentType string
+	Metadata    map[string]interface{}
+}
+
+// Holds information about a directory during processing
+type DirectoryInfo struct {
+	Path     string
+	NumFiles int
+	HasIndex bool
 }
 
 // **********  Public Command Methods  **********
 
 // Generates the site from the content and template files
 func (b *Builder) BuildSite() error {
-	// Parse templates
-	tmpl, err := template.ParseGlob(filepath.Join(command.templateDir, "*.tmpl"))
+	// Generate the files and dirs for the content directory
+	filesMap, dirsMap, err := b.walkContentDir()
+	if err != nil {
+		logger.Error("Error walking content directory: ", err)
+		panic(err)
+	}
+
+	// Process the files
+	err = b.processFiles(filesMap)
 	if err != nil {
 		return err
 	}
 
-	// Initialize a map to track directories
-	dirMap := make(map[string][]os.FileInfo)
+	// Build index files
+	err = b.buildIndexFiles(dirsMap)
+	if err != nil {
+		return err
+	}
 
-	// Walk the content directory
-	err = filepath.Walk(command.contentDir, func(path string, info os.FileInfo, err error) error {
+	return nil
+}
+
+// **********  Private Command Methods  **********
+
+func (b *Builder) walkContentDir() (map[string][]FileInfo, map[string]DirectoryInfo, error) {
+	filesMap := make(map[string][]FileInfo)
+	dirsMap := make(map[string]DirectoryInfo)
+
+	err := filepath.Walk(command.contentDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// Skip the root content directory itself
-		if path == command.contentDir {
-			return nil
+		relPath, err := filepath.Rel(command.rootPath, path)
+		if err != nil {
+			return err
 		}
 
-		dir := filepath.Dir(path)
-		if info.IsDir() {
-			// Ensure the directory is tracked
-			if _, exists := dirMap[dir]; !exists {
-				dirMap[dir] = []os.FileInfo{}
+		// Split the path into directory and file name
+		dir, fileName := filepath.Split(relPath)
+		dir = strings.TrimSuffix(dir, "/") // Clean up trailing slash
+
+		if info.IsDir() { // Process the directory
+			dirInfo, exists := dirsMap[dir]
+			if !exists {
+				dirInfo = DirectoryInfo{Path: dir}
 			}
-			return nil
-		}
+			dirsMap[dir] = dirInfo
 
-		// Track files in their respective directories
-		dirMap[dir] = append(dirMap[dir], info)
+		} else { // Process the file
+			// Determine file type and content type
+			fileType := filepath.Ext(fileName)
+			contentType := strings.SplitN(dir, "/", 2)[0]
 
-		// Process only markdown files
-		if strings.HasSuffix(path, ".md") {
-			logger.Plain("Processing", path)
-			return b.processMarkdownFile(path, tmpl)
+			// Only process md files
+			if fileType == ".md" {
+
+				// Update file info
+				fileInfo := FileInfo{
+					Name:        fileName,
+					Path:        relPath,
+					ContentType: contentType,
+				}
+				filesMap[dir] = append(filesMap[dir], fileInfo)
+
+				// Update directory info for file count and index check
+				dirInfo := dirsMap[dir]
+				dirInfo.NumFiles++
+				if fileName == "index.md" {
+					dirInfo.HasIndex = true
+				}
+				dirsMap[dir] = dirInfo
+			}
 		}
 
 		return nil
 	})
-	if err != nil {
-		return err
-	}
 
-	// Generate index.html for directories without one
-	for dir, files := range dirMap {
-		if !b.hasIndexFile(files) {
-			fmt.Println("Generating index.html for", dir)
-			if err := b.generateIndexHTML(dir, files); err != nil {
+	return filesMap, dirsMap, err
+}
+
+func (b *Builder) processFiles(filesMap map[string][]FileInfo) error {
+	markdown := goldmark.New(
+		goldmark.WithExtensions(
+			meta.Meta,
+		),
+	)
+
+	for _, files := range filesMap {
+		for _, file := range files {
+			content, err := filesystem.Read(file.Path)
+			if err != nil {
+				return err
+			}
+
+			var buf bytes.Buffer
+			context := parser.NewContext()
+			if err := markdown.Convert([]byte(content), &buf, parser.WithContext(context)); err != nil {
+				panic(err)
+			}
+			metaData := meta.Get(context)
+			htmlContent := buf.String()
+
+			// Remove the "content/" prefix from the file path so we can replace
+			// it with the output directory
+			trimmedPath := strings.TrimPrefix(file.Path, "content/")
+			outputPath := filepath.Join(command.outputDir, trimmedPath)
+			outputPath = strings.TrimSuffix(outputPath, filepath.Ext(outputPath)) + ".html"
+
+			// Write the HTML content to the output directory
+			if err := b.renderAndWriteFile(outputPath, htmlContent, metaData); err != nil {
 				return err
 			}
 		}
@@ -89,165 +167,63 @@ func (b *Builder) BuildSite() error {
 	return nil
 }
 
-// **********  Private Command Methods  **********
-
-// Checks if the given slice of FileInfo contains an index file.
-func (b Builder) hasIndexFile(files []os.FileInfo) bool {
-	for _, file := range files {
-		if file.Name() == "index.md" || file.Name() == "index.html" {
-			return true
-		}
-	}
-	return false
-}
-
-// Processes a markdown file and applies the template
-func (b *Builder) processMarkdownFile(filePath string, tmpl *template.Template) error {
-	// Read markdown file
-	data, err := os.ReadFile(filePath)
+func (b *Builder) renderAndWriteFile(outputPath string, contentHTML string, metaData map[string]interface{}) error {
+	// Parse templates
+	tmpl, err := template.ParseGlob(filepath.Join(command.templateDir, "*.tmpl"))
 	if err != nil {
 		return err
 	}
 
-	// Split the content to separate front matter from Markdown content
-	parts := bytes.SplitN(data, []byte("---"), 3)
-	if len(parts) < 3 {
-		return err
-	}
-
-	// Parse the front matter into a map
-	// Assuming `parts[1]` contains the front matter as a string
-	metadataString := string(parts[1]) // Ensure it's a string, adjust as necessary
-
-	// Parse the front matter into a map using readYAML
-	metadataMap, err := filesystem.ParseYml(metadataString)
-	if err != nil {
-		return err
-	}
-
-	// Convert map[string]string to map[string]interface{}
-	metadata := make(map[string]interface{})
-	for key, value := range metadataMap {
-		metadata[key] = value
-	}
-
-	// Extract the title from metadata if it exists for consistency with PageData
-	title, _ := metadata["title"].(string)
-	templateFile, ok := metadata["template"].(string)
-	if !ok {
+	// Extract the template name from outputPath or set a default
+	templateFile := metaData["template"].(string)
+	if templateFile == "" {
 		templateFile = "default.tmpl"
 	}
 
-	// Convert markdown content to HTML
-	markdownContent := parts[2]
-	htmlContent := blackfriday.Run(markdownContent)
-
-	// Create a relative path for the output file
-	relPath, err := filepath.Rel(command.contentDir, filePath)
-	if err != nil {
-		return err
-	}
-	outputPath := filepath.Join(command.outputDir, strings.TrimSuffix(relPath, filepath.Ext(relPath))+".html")
-
-	// Ensure the output directory exists
-	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-		return err
-	}
-
-	// Open output file
-	outputFile, err := os.Create(outputPath)
-	if err != nil {
-		return err
-	}
-	defer outputFile.Close()
-
-	// Apply the template
+	// Build PageData
 	pageData := PageData{
-		SiteName:            config.Sitename,
-		Title:               title,
-		Content:             template.HTML(htmlContent),
-		Metadata:            metadata,
-		Template:            templateFile,
-		Logo:                template.HTML(logo50), // Convert the SVG string to template.HTML
-		ContentTemplateName: templateFile,
+		SiteName:     config.Sitename,
+		Logo:         logo50,
+		Title:        metaData["title"].(string),
+		MdContent:    template.HTML(contentHTML),
+		TemplateFile: templateFile,
+		Metadata:     metaData,
 	}
 
-	return tmpl.ExecuteTemplate(outputFile, "page.tmpl", pageData)
+	// Get the template content
+	templateContent, err := b.getTemplateContent(pageData)
+	if err != nil {
+		return err
+	}
+	pageData.TemplateContent = templateContent
+
+	// Execute the template with the built PageData
+	var output bytes.Buffer
+	if err := tmpl.ExecuteTemplate(&output, "fullpage.tmpl", pageData); err != nil {
+		return err
+	}
+
+	// Use filesystem.Create to write the output to the specified path
+	// Assuming filesystem.Create takes a string path and byte slice as content
+	return filesystem.Create(outputPath, output.String())
 }
 
-func (b *Builder) generateIndexHTML(dirPath string, items []os.FileInfo) error {
-	// Calculate the relative path of dirPath from the content directory
-	relPath, err := filepath.Rel(command.contentDir, dirPath)
-	if err != nil {
-		return err // Handle the error appropriately
-	}
-
-	// Determine content type - the parent directory under content
-	contentType := dirPath
-	if strings.Contains(dirPath, "/") {
-		contentType = strings.Split(dirPath, "/")[0]
-	}
-
-	// Define the template to use for each line item
-	lineTemplate := contentType + "_line.tmpl"
-	lineTemplatePath := filepath.Join(command.rootPath, "template", lineTemplate)
-	if _, err := os.Stat(lineTemplatePath); os.IsNotExist(err) {
-		lineTemplate = "default_line.tmpl"
-	}
-
-	// Construct the output path by joining the root path, output directory, and the relative path
-	outputPath := filepath.Join(command.rootPath, config.OutputDirectory, relPath)
-
-	// Ensure the output directory exists
-	if err := os.MkdirAll(outputPath, 0755); err != nil {
-		return err
-	}
-
-	// Define the template for generating the index.html
-	pageTemplatePath := filepath.Join(command.rootPath, "template", lineTemplate)
-	pageTmpl, err := template.ParseFiles(pageTemplatePath)
-	if err != nil {
-		return err // Handle error appropriately
-	}
-
-	// Define the structure to hold page data
-	type ListPageData struct {
-		Title string
-		Links []string
-	}
-
-	var links []string
-	for _, item := range items {
-		if item.IsDir() {
-			continue // Skip directories
-		}
-		itemName := item.Name()
-		// Assuming you convert .md files to .html
-		if strings.HasSuffix(itemName, ".md") {
-			itemName = strings.TrimSuffix(itemName, ".md") + ".html"
-		}
-		link := filepath.Join(relPath, itemName)
-		links = append(links, link)
-	}
-
-	// Prepare data for the template
-	listPageData := ListPageData{
-		Title: "Index of " + relPath,
-		Links: links,
-	}
-
-	// Generate the index.html file
-	indexPath := filepath.Join(outputPath, "index.html")
-	indexFile, err := os.Create(indexPath)
-	if err != nil {
-		return err
-	}
-	defer indexFile.Close()
-
-	// Execute the template with the page data
-	if err := pageTmpl.Execute(indexFile, listPageData); err != nil {
-		return err
-	}
-
+func (b *Builder) buildIndexFiles(dirsMap map[string]DirectoryInfo) error {
+	logger.Info("Placeholder for building index files")
 	return nil
+}
+
+// Assuming you have a function to get the template content
+func (b *Builder) getTemplateContent(pageData PageData) (template.HTML, error) {
+	tmpl, err := template.ParseGlob(filepath.Join(command.templateDir, "*.tmpl"))
+	if err != nil {
+		return "", err
+	}
+
+	var tmplContent bytes.Buffer
+	if err := tmpl.ExecuteTemplate(&tmplContent, pageData.TemplateFile, pageData); err != nil {
+		return "", err
+	}
+
+	return template.HTML(tmplContent.String()), nil
 }

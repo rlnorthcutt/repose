@@ -79,7 +79,7 @@ func (c *Command) Demo() string {
 // It uses command-line flags to modify the root directory and config file.
 // If there is an error parsing the command flags, it prints an error message.
 func (c *Command) Build(config Config) {
-	logger.Info("Building site from %s with config %s\n", c.rootPath, ConfigFile)
+	logger.Info("Building site from %s with %s", c.rootPath, ConfigFile)
 	if err := buildCommand.BuildSite(); err != nil {
 		fmt.Println("Error building site:", err)
 	}
@@ -192,6 +192,7 @@ func (c *Command) createNewContent(config Config, typeDirectory, fileNameParam s
 	path := filepath.Join(config.ContentDirectory, typeDirectory, fileName)
 
 	// Get default content
+	// @TODO: change thsi to use a yml file for the metadata like default.yml or post.yml
 	content := c.defaultContent(contentType, title)
 
 	// Create the file or directory
@@ -228,7 +229,8 @@ func (c *Command) createNewContent(config Config, typeDirectory, fileNameParam s
 		if response == "yes" || response == "" {
 			logger.Info("Creating template file: %s", templateName)
 			path := "template/" + templateName
-			template := "DefaultTemplate_" + config.Theme
+			// @TODO: Change this to use the default.tmpl file
+			template := DefaultTemplate_none
 			if err := filesystem.Create(path, template); err != nil {
 				logger.Error("Error creating template:", err)
 				return nil

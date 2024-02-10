@@ -2,7 +2,7 @@ package main
 
 const DefaultTemplate_pico = `<!-- default.tmpl -->
 <article>
-    <div>{{ .Content }}</div>
+    <div>{{ .MdContent }}</div>
 </article>
 `
 
@@ -16,7 +16,7 @@ const ListTemplate_pico = `<!-- list.tmpl -->
 </article>
 `
 
-const PageTemplate_pico = `<!-- page.tmpl -->
+const PageTemplate_pico = `<!-- fullpage.tmpl -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -29,7 +29,7 @@ const PageTemplate_pico = `<!-- page.tmpl -->
 <body>
     {{ template "header.tmpl" . }}
     <div class="main container">
-        {{ template .ContentTemplateName . }}
+        {{ .TemplateContent }}
     </div>
     {{ template "footer.tmpl" . }}
 </body>

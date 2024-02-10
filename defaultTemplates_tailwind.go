@@ -2,7 +2,7 @@ package main
 
 const DefaultTemplate_tailwind = `<!-- default.tmpl -->
 <article>
-    <div>{{ .Content }}</div>
+    <div>{{ .MdContent }}</div>
 </article>
 `
 
@@ -16,7 +16,7 @@ const ListTemplate_tailwind = `<!-- list.tmpl -->
 </article>
 `
 
-const PageTemplate_tailwind = `<!-- page.tmpl -->
+const PageTemplate_tailwind = `<!-- fullpage.tmpl -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -30,7 +30,7 @@ const PageTemplate_tailwind = `<!-- page.tmpl -->
     {{ template "header.tmpl" . }}
     {{ template "navigation.tmpl" . }}
     <div class="main container">
-        {{ template .ContentTemplateName . }}
+        {{ .TemplateContent }}
     </div>
     {{ template "footer.tmpl" . }}
 </body>

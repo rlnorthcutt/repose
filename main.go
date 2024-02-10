@@ -29,7 +29,7 @@ func main() {
 // and set the path to be used elsewhere
 func parseFlags() {
 	// Set the default values for the flags
-	rootPath := ""
+	rootPath := "."
 
 	// Parse flags
 	flag.StringVar(&rootPath, "root", rootPath, "Root path of the project")
@@ -52,6 +52,11 @@ func dispatchCommand(commandName string) {
 			logger.Warn("No config file found. You need to run `repose init` first.")
 			os.Exit(0)
 		}
+
+		// Set rootPath and configPath for command
+		// @TODO This is a workaround becuase when we call this in the parse flags
+		// the config is not loaded yet... but we can't load it until now.
+		command.SetRootPath(command.rootPath)
 	}
 
 	// Dispatch the command

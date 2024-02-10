@@ -27,7 +27,7 @@ func (i *Init) CreateNewProjectFiles(rootPath string) error {
 
 	// Set the output for the root path
 	installDir := rootPath
-	if rootPath == "" {
+	if rootPath == "" || rootPath == "." {
 		installDir = "this directory"
 	}
 
@@ -114,7 +114,7 @@ func (i *Init) getTemplateContents(config Config) []FileContent {
 	indexMD := command.defaultContent("default", "Your homepage")
 	files := []FileContent{
 		{"template/default.tmpl", themeTemplates["default"]},
-		{"template/page.tmpl", themeTemplates["page"]},
+		{"template/fullpage.tmpl", themeTemplates["page"]},
 		{"template/header.tmpl", themeTemplates["header"]},
 		{"template/navigation.tmpl", themeTemplates["navigation"]},
 		{"template/footer.tmpl", themeTemplates["footer"]},

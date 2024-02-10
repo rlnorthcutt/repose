@@ -2,7 +2,7 @@ package main
 
 const DefaultTemplate_none = `<!-- default.tmpl -->
 <article>
-    <div>{{ .Content }}</div>
+    <div>{{ .MdContent }}</div>
 </article>
 `
 
@@ -16,7 +16,7 @@ const ListTemplate_none = `<!-- list.tmpl -->
 </article>
 `
 
-const PageTemplate_none = `<!-- page.tmpl -->
+const PageTemplate_none = `<!-- fullpage.tmpl -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -29,7 +29,7 @@ const PageTemplate_none = `<!-- page.tmpl -->
     {{ template "header.tmpl" . }}
     {{ template "navigation.tmpl" . }}
     <div class="main container">
-        {{ template .ContentTemplateName . }}
+        {{ .TemplateContent }}
     </div>
     {{ template "footer.tmpl" . }}
 </body>

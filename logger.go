@@ -55,3 +55,10 @@ func (l *Logger) Success(message string, value ...any) {
 	tag := "\u001B[1;32m[SUCCESS]\u001B[0;39m "
 	fmt.Printf(tag+message+"\n\n", value...)
 }
+
+// DEBUG method for the logger type
+func (l *Logger) Debug(message string, value ...any) {
+	tag := "\u001B[0;31m[--dEbUg--]\u001B[0;39m "
+	fmt.Printf(tag+message+"\n", value...)
+	os.Exit(1)
+}

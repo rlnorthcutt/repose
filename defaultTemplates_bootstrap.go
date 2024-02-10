@@ -2,7 +2,7 @@ package main
 
 const DefaultTemplate_bootstrap = `<!-- default.tmpl -->
 <article>
-    <div>{{ .Content }}</div>
+    <div>{{ .MdContent }}</div>
 </article>
 `
 
@@ -16,7 +16,7 @@ const ListTemplate_bootstrap = `<!-- list.tmpl -->
 </article>
 `
 
-const PageTemplate_bootstrap = `<!-- page.tmpl -->
+const PageTemplate_bootstrap = `<!-- fullpage.tmpl -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -30,7 +30,7 @@ const PageTemplate_bootstrap = `<!-- page.tmpl -->
 <body>
     {{ template "header.tmpl" . }}
     <main class="main container">
-        {{ template .ContentTemplateName . }}
+        {{ .TemplateContent }}
     </main>
     {{ template "footer.tmpl" . }}
 </body>
