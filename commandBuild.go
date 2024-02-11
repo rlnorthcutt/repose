@@ -24,6 +24,7 @@ type DirectoryInfo struct {
 	Path     string
 	NumFiles int
 	HasIndex bool
+	Files    []FileInfo
 }
 
 // Holds information about a file during processing
@@ -31,6 +32,7 @@ type DirectoryInfo struct {
 type FileInfo struct {
 	Name        string
 	Path        string
+	FileType    string
 	ContentType string
 	Metadata    map[string]interface{}
 }
@@ -47,19 +49,27 @@ type PageData struct {
 	Metadata        map[string]interface{}
 }
 
+var templates *template.Template
+
 // **********  Public Command Methods  **********
 
 // Generates the site from the content and template files
 func (b *Builder) BuildSite() error {
+	// Initialize the templates
+	err := b.initTemplates()
+	if err != nil {
+		return err
+	}
+
 	// Generate the files and dirs for the content directory
-	filesMap, dirsMap, err := b.walkContentDir()
+	dirsMap, err := b.walkContentDir()
 	if err != nil {
 		logger.Error("Error walking content directory: ", err)
 		panic(err)
 	}
 
 	// Process the files
-	err = b.processFiles(filesMap)
+	err = b.processFiles(dirsMap)
 	if err != nil {
 		return err
 	}
@@ -77,9 +87,8 @@ func (b *Builder) BuildSite() error {
 
 // Walk the content directory and build the files and dirs maps
 // Returns a map of files and a map of directories
-func (b *Builder) walkContentDir() (map[string][]FileInfo, map[string]DirectoryInfo, error) {
+func (b *Builder) walkContentDir() (map[string]DirectoryInfo, error) {
 	// Create maps to hold the files and directories
-	filesMap := make(map[string][]FileInfo)
 	dirsMap := make(map[string]DirectoryInfo)
 
 	// Walk the content directory and build the files and dirs maps
@@ -99,35 +108,44 @@ func (b *Builder) walkContentDir() (map[string][]FileInfo, map[string]DirectoryI
 		dir = strings.TrimSuffix(dir, "/") // Clean up trailing slash
 
 		if info.IsDir() { // Process the directory
-			dirInfo, exists := dirsMap[dir]
-			if !exists {
-				dirInfo = DirectoryInfo{Path: dir}
+			// This should run the first time we encounter a directory
+			if _, exists := dirsMap[dir]; !exists {
+				dirsMap[dir] = DirectoryInfo{
+					Path:     dir,
+					NumFiles: 0,
+					HasIndex: false,
+					Files:    []FileInfo{},
+				}
 			}
-			dirsMap[dir] = dirInfo
-
 		} else { // Process the file
 			// Determine file type and content type
 			fileType := filepath.Ext(fileName)
+			fileType = strings.ToLower(fileType)
+			fileType = strings.TrimPrefix(fileType, ".")
+			// The first subdrectory under content is the content type
 			contentType := strings.SplitN(dir, "/", 2)[0]
 
-			// Only process md files
-			if fileType == ".md" {
-
-				// Create a new FileInfo struct and add it to the filesMap
+			// Only process md and html files
+			if fileType == "md" || fileType == "html" {
+				// Create a new FileInfo struct
 				fileInfo := FileInfo{
 					Name:        fileName,
 					Path:        relPath,
+					FileType:    fileType,
 					ContentType: contentType,
 				}
-				filesMap[dir] = append(filesMap[dir], fileInfo)
 
-				// Update directory info for file count and index check
-				// We will use this to create the listing pages
+				// Update directory info
 				dirInfo := dirsMap[dir]
+				// Increment the number of files in the directory
 				dirInfo.NumFiles++
-				if fileName == "index.md" {
+				// Add the file to the directory info
+				dirInfo.Files = append(dirInfo.Files, fileInfo)
+				// Check if the file is an index file
+				if fileName == "index.md" || fileName == "index.html" {
 					dirInfo.HasIndex = true
 				}
+
 				dirsMap[dir] = dirInfo
 			}
 		}
@@ -135,10 +153,10 @@ func (b *Builder) walkContentDir() (map[string][]FileInfo, map[string]DirectoryI
 		return nil
 	})
 
-	return filesMap, dirsMap, err
+	return dirsMap, err
 }
 
-func (b *Builder) processFiles(filesMap map[string][]FileInfo) error {
+func (b *Builder) processFiles(dirsMap map[string]DirectoryInfo) error {
 	// Create a new markdown parser with the meta extension
 	markdown := goldmark.New(
 		goldmark.WithExtensions(
@@ -146,9 +164,10 @@ func (b *Builder) processFiles(filesMap map[string][]FileInfo) error {
 		),
 	)
 
-	// Loop through each of the files
-	for _, files := range filesMap {
-		for _, file := range files {
+	// Loop through each directory in dirsMap
+	for _, dirInfo := range dirsMap {
+		// Loop through each file in the directory
+		for _, file := range dirInfo.Files {
 			// Read the MD file and process it
 			content, err := filesystem.Read(file.Path)
 			if err != nil {
@@ -159,7 +178,7 @@ func (b *Builder) processFiles(filesMap map[string][]FileInfo) error {
 			var buf bytes.Buffer
 			context := parser.NewContext()
 			if err := markdown.Convert([]byte(content), &buf, parser.WithContext(context)); err != nil {
-				panic(err)
+				return err
 			}
 			metaData := meta.Get(context)
 			htmlContent := buf.String()
@@ -181,12 +200,6 @@ func (b *Builder) processFiles(filesMap map[string][]FileInfo) error {
 }
 
 func (b *Builder) renderAndWriteFile(outputPath string, contentHTML string, metaData map[string]interface{}) error {
-	// Parse templates
-	tmpl, err := template.ParseGlob(filepath.Join(command.templateDir, "*.tmpl"))
-	if err != nil {
-		return err
-	}
-
 	// Extract the template name from outputPath or set a default
 	templateFile := metaData["template"].(string)
 	if templateFile == "" {
@@ -213,7 +226,7 @@ func (b *Builder) renderAndWriteFile(outputPath string, contentHTML string, meta
 
 	// Execute the full page template with the built PageData
 	var output bytes.Buffer
-	if err := tmpl.ExecuteTemplate(&output, "fullpage.tmpl", pageData); err != nil {
+	if err := templates.ExecuteTemplate(&output, "fullpage.tmpl", pageData); err != nil {
 		return err
 	}
 
@@ -229,17 +242,19 @@ func (b *Builder) buildIndexFiles(dirsMap map[string]DirectoryInfo) error {
 
 // Process the content in the pageData struct to generate tempalted contend
 func (b *Builder) getTemplateContent(pageData PageData) (template.HTML, error) {
-	// @TODO Look into reusing the template parsing, and if it's not possible, add a cache
-	tmpl, err := template.ParseGlob(filepath.Join(command.templateDir, "*.tmpl"))
-	if err != nil {
-		return "", err
-	}
-
 	// Process the template in the metsdata with the content in the metadata
 	var tmplContent bytes.Buffer
-	if err := tmpl.ExecuteTemplate(&tmplContent, pageData.TemplateFile, pageData); err != nil {
+	if err := templates.ExecuteTemplate(&tmplContent, pageData.TemplateFile, pageData); err != nil {
 		return "", err
 	}
 
 	return template.HTML(tmplContent.String()), nil
+}
+
+// Parse the templates and store them in a global variable
+func (b *Builder) initTemplates() error {
+	var err error
+	templateDir := command.templateDir
+	templates, err = template.ParseGlob(filepath.Join(templateDir, "*.tmpl"))
+	return err
 }
