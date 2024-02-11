@@ -18,7 +18,25 @@ type Builder int
 // Defining a global varaiable for build command
 var buildCommand Builder
 
+// Holds information about a directory during processing
+// Used to process the content directory structure
+type DirectoryInfo struct {
+	Path     string
+	NumFiles int
+	HasIndex bool
+}
+
+// Holds information about a file during processing
+// Used to process the content files
+type FileInfo struct {
+	Name        string
+	Path        string
+	ContentType string
+	Metadata    map[string]interface{}
+}
+
 // PageData holds data to pass into templates
+// This is used to build the full page content
 type PageData struct {
 	SiteName        string
 	Logo            template.HTML
@@ -27,21 +45,6 @@ type PageData struct {
 	TemplateFile    string
 	TemplateContent template.HTML
 	Metadata        map[string]interface{}
-}
-
-// Holds information about a file during processing
-type FileInfo struct {
-	Name        string
-	Path        string
-	ContentType string
-	Metadata    map[string]interface{}
-}
-
-// Holds information about a directory during processing
-type DirectoryInfo struct {
-	Path     string
-	NumFiles int
-	HasIndex bool
 }
 
 // **********  Public Command Methods  **********
@@ -72,15 +75,20 @@ func (b *Builder) BuildSite() error {
 
 // **********  Private Command Methods  **********
 
+// Walk the content directory and build the files and dirs maps
+// Returns a map of files and a map of directories
 func (b *Builder) walkContentDir() (map[string][]FileInfo, map[string]DirectoryInfo, error) {
+	// Create maps to hold the files and directories
 	filesMap := make(map[string][]FileInfo)
 	dirsMap := make(map[string]DirectoryInfo)
 
+	// Walk the content directory and build the files and dirs maps
+	// We update both maps as we walk the directory one time
 	err := filepath.Walk(command.contentDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-
+		// Get the relative path to the root directory
 		relPath, err := filepath.Rel(command.rootPath, path)
 		if err != nil {
 			return err
@@ -105,7 +113,7 @@ func (b *Builder) walkContentDir() (map[string][]FileInfo, map[string]DirectoryI
 			// Only process md files
 			if fileType == ".md" {
 
-				// Update file info
+				// Create a new FileInfo struct and add it to the filesMap
 				fileInfo := FileInfo{
 					Name:        fileName,
 					Path:        relPath,
@@ -114,6 +122,7 @@ func (b *Builder) walkContentDir() (map[string][]FileInfo, map[string]DirectoryI
 				filesMap[dir] = append(filesMap[dir], fileInfo)
 
 				// Update directory info for file count and index check
+				// We will use this to create the listing pages
 				dirInfo := dirsMap[dir]
 				dirInfo.NumFiles++
 				if fileName == "index.md" {
@@ -130,19 +139,23 @@ func (b *Builder) walkContentDir() (map[string][]FileInfo, map[string]DirectoryI
 }
 
 func (b *Builder) processFiles(filesMap map[string][]FileInfo) error {
+	// Create a new markdown parser with the meta extension
 	markdown := goldmark.New(
 		goldmark.WithExtensions(
 			meta.Meta,
 		),
 	)
 
+	// Loop through each of the files
 	for _, files := range filesMap {
 		for _, file := range files {
+			// Read the MD file and process it
 			content, err := filesystem.Read(file.Path)
 			if err != nil {
 				return err
 			}
 
+			// Get the metadata from the markdown file
 			var buf bytes.Buffer
 			context := parser.NewContext()
 			if err := markdown.Convert([]byte(content), &buf, parser.WithContext(context)); err != nil {
@@ -190,14 +203,15 @@ func (b *Builder) renderAndWriteFile(outputPath string, contentHTML string, meta
 		Metadata:     metaData,
 	}
 
-	// Get the template content
+	// Process the MD content with the template
+	// This will be used to process the full page from the template
 	templateContent, err := b.getTemplateContent(pageData)
 	if err != nil {
 		return err
 	}
 	pageData.TemplateContent = templateContent
 
-	// Execute the template with the built PageData
+	// Execute the full page template with the built PageData
 	var output bytes.Buffer
 	if err := tmpl.ExecuteTemplate(&output, "fullpage.tmpl", pageData); err != nil {
 		return err
@@ -213,13 +227,15 @@ func (b *Builder) buildIndexFiles(dirsMap map[string]DirectoryInfo) error {
 	return nil
 }
 
-// Assuming you have a function to get the template content
+// Process the content in the pageData struct to generate tempalted contend
 func (b *Builder) getTemplateContent(pageData PageData) (template.HTML, error) {
+	// @TODO Look into reusing the template parsing, and if it's not possible, add a cache
 	tmpl, err := template.ParseGlob(filepath.Join(command.templateDir, "*.tmpl"))
 	if err != nil {
 		return "", err
 	}
 
+	// Process the template in the metsdata with the content in the metadata
 	var tmplContent bytes.Buffer
 	if err := tmpl.ExecuteTemplate(&tmplContent, pageData.TemplateFile, pageData); err != nil {
 		return "", err

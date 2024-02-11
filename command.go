@@ -231,7 +231,9 @@ func (c *Command) createNewContent(config Config, typeDirectory, fileNameParam s
 			path := "template/" + templateName
 			// @TODO: Change this to use the default.tmpl file
 			template := DefaultTemplate_none
-			if err := filesystem.Create(path, template); err != nil {
+			// Replace "default.tmpl" with the value of templateName
+			labeledTemplate := strings.Replace(template, "default.tmpl", templateName, -1)
+			if err := filesystem.Create(path, labeledTemplate); err != nil {
 				logger.Error("Error creating template:", err)
 				return nil
 			}
