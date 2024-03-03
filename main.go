@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"os"
 )
 
@@ -14,31 +13,16 @@ func main() {
 	}
 
 	// Check for flags and set the rootPath and configPath
-	parseFlags()
+	command.parseFlags()
 
 	// Get the command name
-	commandName := os.Args[1]
+	commandName := command.Args[0]
 
 	// Dispatch the command
 	dispatchCommand(commandName)
 }
 
 // **********  Private Main methods  **********
-
-// ParseFlags will create and parse the CLI flags
-// and set the path to be used elsewhere
-func parseFlags() {
-	// Set the default values for the flags
-	rootPath := "."
-
-	// Parse flags
-	flag.StringVar(&rootPath, "root", rootPath, "Root path of the project")
-	flag.StringVar(&rootPath, "r", rootPath, "Root path of the project (shorthand)")
-	flag.Parse()
-
-	// Set rootPath and configPath for command
-	command.SetRootPath(rootPath)
-}
 
 // dispatchCommand will take the command name and dispatch it to the correct function
 func dispatchCommand(commandName string) {
@@ -56,7 +40,7 @@ func dispatchCommand(commandName string) {
 		// Set rootPath and configPath for command
 		// @TODO This is a workaround becuase when we call this in the parse flags
 		// the config is not loaded yet... but we can't load it until now.
-		command.SetRootPath(command.rootPath)
+		buildCommand.SetRootPath(buildCommand.rootPath)
 	}
 
 	// Dispatch the command

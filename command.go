@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -17,10 +18,8 @@ import (
 
 // Defining a new public type 'Command'
 type Command struct {
-	rootPath    string
-	contentDir  string
-	outputDir   string
-	templateDir string
+	rootPath string
+	Args     []string
 }
 
 // Defining a global varaiable for Command
@@ -32,8 +31,8 @@ var command Command
 // It creates the proper folder structure and starter files.
 func (c *Command) Init() string {
 	configFile := ConfigFile
-	if c.rootPath != "" {
-		configFile = filepath.Join(c.rootPath, ConfigFile)
+	if buildCommand.rootPath != "" {
+		configFile = filepath.Join(buildCommand.rootPath, ConfigFile)
 	}
 
 	// Check if the config.yml file already exists
@@ -42,7 +41,7 @@ func (c *Command) Init() string {
 	}
 
 	// Create the project files
-	if err := initCommand.CreateNewProjectFiles(c.rootPath); err != nil {
+	if err := initCommand.CreateNewProjectFiles(buildCommand.rootPath); err != nil {
 		logger.Fatal("Error creating site structure: ", err)
 	}
 	return ""
@@ -79,9 +78,9 @@ func (c *Command) Demo() string {
 // It uses command-line flags to modify the root directory and config file.
 // If there is an error parsing the command flags, it prints an error message.
 func (c *Command) Build(config Config) {
-	logger.Info("Building site from %s with %s", c.rootPath, ConfigFile)
+	logger.Info("Building site from %s with %s", buildCommand.rootPath, ConfigFile)
 	if err := buildCommand.BuildSite(); err != nil {
-		fmt.Println("Error building site:", err)
+		logger.Fatal("Error building site:", err)
 	}
 	logger.Success("Site built successfully")
 }
@@ -91,10 +90,10 @@ func (c *Command) Preview(config Config) {
 	logger.Info("Setting up the local preview server")
 
 	// Define the directory to serve.
-	if c.rootPath == "" {
-		c.rootPath = "."
+	if buildCommand.rootPath == "" {
+		buildCommand.rootPath = "."
 	}
-	webDir := filepath.Join(c.rootPath, config.OutputDirectory)
+	webDir := filepath.Join(buildCommand.rootPath, config.OutputDirectory)
 
 	// Setup the HTTP server.
 	fs := http.FileServer(http.Dir(webDir))
@@ -109,7 +108,7 @@ func (c *Command) Preview(config Config) {
 	}()
 
 	logger.Info("Preview server ready at %s/index.html", config.PreviewURL)
-	logger.Plain("Press Ctrl+C to stop the server")
+	logger.Detail("Press Ctrl+C to stop the server")
 
 	// Give the server a moment to start.
 	time.Sleep(500 * time.Millisecond)
@@ -128,18 +127,9 @@ func (c *Command) Update() string {
 }
 
 // Displays the help text for the command-line tool
-func (c *Command) Help() string {
-	response := HelpText
-	logger.Info(response)
-	return ""
-}
-
-// Set the root path and comomon directories for commands
-func (c *Command) SetRootPath(path string) {
-	c.rootPath = path
-	c.contentDir = filepath.Join(path, config.ContentDirectory)
-	c.outputDir = filepath.Join(path, config.OutputDirectory)
-	c.templateDir = filepath.Join(path, "template")
+func (c *Command) Help() {
+	response := c.coloredLogo(AsciiLogo) + "\n\n" + HelpText
+	fmt.Print(response)
 }
 
 // **********  Private Command Methods  **********
@@ -213,7 +203,7 @@ func (c *Command) createNewContent(config Config, typeDirectory, fileNameParam s
 	// Ask the user to create the template file if it doesn't exist
 	if !found {
 		logger.Warn("Template file not found: %s", templateName)
-		logger.Plain("Do you want to create this template? (Yes/no)")
+		logger.Detail("Do you want to create this template? (Yes/no)")
 
 		// Read the user's response
 		reader := bufio.NewReader(os.Stdin)
@@ -254,7 +244,7 @@ func (c *Command) createNewContent(config Config, typeDirectory, fileNameParam s
 
 // openFileInEditor opens the specified file in the given editor.
 func (c *Command) openFileInEditor(editor, filePath string) error {
-	logger.Plain("Opening file in editor: %s", editor)
+	logger.Detail("Opening file in editor: %s", editor)
 	// Pause for a moment before opening the editor
 	time.Sleep(500 * time.Millisecond)
 
@@ -304,4 +294,56 @@ func (c *Command) openBrowser(url string) {
 	if err != nil {
 		logger.Error("Failed to open the browser: %v\n", err)
 	}
+}
+
+// ParseFlags will create and parse the CLI flags
+// and set the path to be used elsewhere
+func (c *Command) parseFlags() {
+	// Define flags
+	var isVerbose bool
+	var rootPath string
+
+	// Define flags
+	flag.BoolVar(&isVerbose, "verbose", false, "Display detail logger messages")
+	flag.BoolVar(&isVerbose, "v", false, "Display detail logger messages (shorthand)")
+	flag.StringVar(&rootPath, "root", ".", "Root path of the project")
+	flag.StringVar(&rootPath, "r", ".", "Root path of the project (shorthand)")
+
+	// Parse flags
+	flag.Parse()
+
+	if isVerbose {
+		logger.Info("Verbose mode enabled")
+	}
+
+	// Validate parsed rootPath
+	if _, err := os.Stat(rootPath); err != nil {
+		logger.Fatal("Invalid root path:", err)
+	}
+
+	// Set rootPath and verbose mode
+	buildCommand.SetRootPath(rootPath)
+	logger.isVerbose = isVerbose
+	c.rootPath = rootPath
+	c.Args = flag.Args()
+}
+
+func (c *Command) coloredLogo(text string) string {
+	colors := []string{
+		"\033[34m", // Blue
+		"\033[36m", // Cyan
+		"\033[33m", // Yellow
+		"\033[37m", // White
+	}
+
+	lines := strings.Split(text, "\n")
+	coloredLines := make([]string, len(lines))
+
+	for i, line := range lines {
+		// Calculate color index based on cycle and line position within the cycle
+		colorIndex := (i / 2) % len(colors)
+		coloredLines[i] = colors[colorIndex] + line + "\033[0m"
+	}
+
+	return strings.Join(coloredLines, "\n")
 }

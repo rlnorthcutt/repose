@@ -43,7 +43,7 @@ const ConfigFile = "config.yml"
 // We use this instead of loading the YAML modules to keep the size down
 func (c *Config) Load() (Config, error) {
 	// Read the entire config file content
-	configPath := filepath.Join(command.rootPath, ConfigFile)
+	configPath := filepath.Join(buildCommand.rootPath, ConfigFile)
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return Config{}, err

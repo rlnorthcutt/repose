@@ -2,15 +2,15 @@ package main
 
 const DefaultTemplate_pico = `<!-- default.tmpl -->
 <article>
-    <div>{{ .MdContent }}</div>
+    <div>{{ .Content }}</div>
 </article>
 `
 
 const ListTemplate_pico = `<!-- list.tmpl -->
 <article>
     <ul>
-    {{ range .Links }}
-    <li><a href="{{ . }}">{{ . }}</a></li>
+    {{ range .Files }}
+    <li><a href="{{ .OutputPath }}">{{ .MetaData.title }}</a></li>
     {{ end }}
     </ul>
 </article>
@@ -29,7 +29,7 @@ const PageTemplate_pico = `<!-- fullpage.tmpl -->
 <body>
     {{ template "header.tmpl" . }}
     <div class="main container">
-        {{ .TemplateContent }}
+        {{ .Content }}
     </div>
     {{ template "footer.tmpl" . }}
 </body>

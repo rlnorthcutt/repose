@@ -27,6 +27,7 @@ go build -ldflags="-s -w"
 - template file pattern for teasers
 - update listing page html to use templates
 - update code to use optional content type template overrides
+- BUG - the listing page isn't being output with the page.tmpl                                                                                   
 - 
 
 ### Checklist for RC
@@ -35,9 +36,18 @@ go build -ldflags="-s -w"
 - default md metadata overrides per content type (templates/metadata.post.yml)
 - generate the md override when creating content type template (with default)
 - autowire metadata to metatags in template (name them for the metatags)
-- 
+- publish flag on metadata - don't process false
+- refactor codebase to follow best practices
+- create makefile for managing
+- generate tests for all packages
+
+### Checklist for GA
+- profile and look for bottlenecks
+- check test coverage
+- get feedback and input from users
 
 
 ### Future commands
 - demo*   - Generate demo content (*not implemented)
 - update* - Update the repose binary (*not implemented)
+- --verbose flag (to let us hide the output otherwise - make it part of loggerPlain?)

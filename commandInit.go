@@ -33,7 +33,8 @@ func (i *Init) CreateNewProjectFiles(rootPath string) error {
 
 	// Create the project directory structure
 	logger.Info("Creating new project in %s", installDir)
-	dirs := []string{"content", "template", "web", "web/asset", "web/asset/css", "web/asset/js", "web/asset/img"}
+	logger.Detail("Creating directory structure...")
+	dirs := []string{"content", "template", "web", "web/assets", "web/assets/css", "web/assets/js", "web/assets/img"}
 	for _, dir := range dirs {
 		dirPath := filepath.Join(rootPath, dir)
 		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
@@ -48,6 +49,7 @@ func (i *Init) CreateNewProjectFiles(rootPath string) error {
 
 	// Get the template constants and files names
 	files := i.getTemplateContents(config)
+	logger.Detail("Creating template files...")
 
 	// Loop over the files and create them
 	for _, f := range files {
@@ -80,6 +82,7 @@ func (i *Init) getTemplateContents(config Config) []FileContent {
 			"header":     HeaderTemplate_pico,
 			"navigation": NavigationTemplate_pico,
 			"footer":     FooterTemplate_pico,
+			"list":       ListTemplate_pico,
 			"css":        css_pico,
 		},
 		"bootstrap": {
@@ -88,6 +91,7 @@ func (i *Init) getTemplateContents(config Config) []FileContent {
 			"header":     HeaderTemplate_bootstrap,
 			"navigation": NavigationTemplate_bootstrap,
 			"footer":     FooterTemplate_bootstrap,
+			"list":       ListTemplate_bootstrap,
 			"css":        css_bootstrap,
 		},
 		"tailwind": {
@@ -96,6 +100,7 @@ func (i *Init) getTemplateContents(config Config) []FileContent {
 			"header":     HeaderTemplate_tailwind,
 			"navigation": NavigationTemplate_tailwind,
 			"footer":     FooterTemplate_tailwind,
+			"list":       ListTemplate_tailwind,
 			"css":        css_tailwind,
 		},
 		"none": {
@@ -104,6 +109,7 @@ func (i *Init) getTemplateContents(config Config) []FileContent {
 			"header":     HeaderTemplate_none,
 			"navigation": NavigationTemplate_none,
 			"footer":     FooterTemplate_none,
+			"list":       ListTemplate_none,
 			"css":        css_none,
 		},
 	}
@@ -118,6 +124,8 @@ func (i *Init) getTemplateContents(config Config) []FileContent {
 		{"template/header.tmpl", themeTemplates["header"]},
 		{"template/navigation.tmpl", themeTemplates["navigation"]},
 		{"template/footer.tmpl", themeTemplates["footer"]},
+		{"template/list.tmpl", themeTemplates["list"]},
+		{"template/listitem.tmpl", themeTemplates["listitem"]},
 		{"content/index.md", indexMD},
 		{"content/test.md", MarkdownTest},
 		{"web/asset/css/styles.css", themeTemplates["css"]},

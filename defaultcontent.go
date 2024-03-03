@@ -1,7 +1,17 @@
 // defaultcontent.go
 package main
 
+const AsciiLogo = `-----------------------------------------------------------------------                                                             
+8b,dPPYba,   ,adPPYba,  8b,dPPYba,    ,adPPYba,   ,adPPYba,   ,adPPYba,  
+88P'   "Y8  a8P_____88  88P'    "8a  a8"     "8a  I8[    ""  a8P_____88  
+88          8PP"""""""  88       d8  8b       d8   '"Y8ba,   8PP"""""""  
+88          "8b,   ,aa  88b,   ,a8"  "8a,   ,a8"  aa    ]8I  "8b,   ,aa  
+88           '"Ybbd8"'  88 YbbdP"'    '"YbbdP"'   '"YbbdP"'   '"Ybbd8"'  
+                        88                                               
+----------------------- 88 --------------------------------------------`
+
 const HelpText = `Repose Commands:
+
 Usage: repose [OPTIONS] <COMMAND>
 
 Commands:
@@ -13,6 +23,8 @@ Commands:
 	
 Options:
 	-r, --root <ROOT> Directory to use as root of project (default: ./)
+	-v, --verbose     Show verbose output
+
 `
 
 const DefaultConfig = `sitename: Repose site
