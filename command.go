@@ -333,7 +333,7 @@ func (c *Command) coloredLogo(text string) string {
 		"\033[34m", // Blue
 		"\033[36m", // Cyan
 		"\033[33m", // Yellow
-		"\033[37m", // White
+		"\033[37m", // Light grey
 	}
 
 	lines := strings.Split(text, "\n")
