@@ -1,65 +1,64 @@
 package main
 
 import (
+	"flag"
 	"os"
+
+	"github.com/rlnorthcutt/repose/internal/config"
+	"github.com/rlnorthcutt/repose/pkg/logger"
 )
 
 // Func main should be as small as possible and do as little as possible by convention
 func main() {
-	// Check if a command is provided, immediately exit if not.
-	if len(os.Args) < 2 {
-		logger.Warn("Expected a command - type `repose help` to get options.")
-		os.Exit(0)
-	}
+	// Parse the command line arguments
+	rootPath, isVerbose, args := parse()
 
-	// Check for flags and set the rootPath and configPath
-	command.parseFlags()
+	// Create the logger instance to use
+	logger := logger.New(isVerbose)
 
-	// Get the command name
-	commandName := command.Args[0]
+	// Check the environment - returns if the config file is not found
+	checkEnvironment(args, logger, rootPath)
 
 	// Dispatch the command
-	dispatchCommand(commandName)
+	command.Dispatch(args, logger, rootPath)
 }
 
 // **********  Private Main methods  **********
 
-// dispatchCommand will take the command name and dispatch it to the correct function
-func dispatchCommand(commandName string) {
+// Parse the command for flags and arguments
+func parse() (rootPath string, isVerbose bool, args []string) {
+	// Define flags for verbose mode and root path with both long and shorthand versions.
+	flag.BoolVar(&isVerbose, "verbose", false, "Display detailed logger messages")
+	flag.BoolVar(&isVerbose, "v", false, "Display detailed logger messages (shorthand)")
+	flag.StringVar(&rootPath, "root", ".", "Root path of the project")
+	flag.StringVar(&rootPath, "r", ".", "Root path of the project (shorthand)")
 
-	// Load config for specific commands
-	switch commandName {
-	case "new", "build", "preview":
-		var err error
-		config, err = config.Load()
-		if err != nil {
-			logger.Warn("No config file found. You need to run `repose init` first.")
-			os.Exit(0)
-		}
+	// Parse the CLI flags
+	flag.Parse()
 
-		// Set rootPath and configPath for command
-		// @TODO This is a workaround becuase when we call this in the parse flags
-		// the config is not loaded yet... but we can't load it until now.
-		buildCommand.SetRootPath(buildCommand.rootPath)
+	return rootPath, isVerbose, flag.Args()
+}
+
+// Check the environment for the required files and directories & load the config file
+func checkEnvironment(args []string, logger *logger.Logger, rootPath string) {
+	// Check if a command is provided, immediately exit if not.
+	if len(args) < 1 {
+		logger.Warn("Expected a command - use \033[1;96m`repose help`\033[0m to get options.")
+		os.Exit(0)
 	}
 
-	// Dispatch the command
-	switch commandName {
-	case "init":
-		command.Init()
-	case "new":
-		command.New(config)
-	case "demo":
-		command.Demo()
-	case "build":
-		command.Build(config)
-	case "preview":
-		command.Preview(config)
-	case "update":
-		command.Update()
-	case "help":
-		command.Help()
-	default:
-		logger.Error("Unknown command: %s\n", os.Args[1])
+	command := args[0]
+
+	// Check if the config file exists
+	if command != "init" && command != "help" {
+		logger.Detail("Checking if config file exists.")
+
+		// Setup a new config struct
+		configurator := config.New(logger)
+
+		if !configurator.Exists(rootPath) {
+			logger.Warn("No config file found. You need to run \033[1;96m`repose init`\033[0m first.")
+			os.Exit(0)
+		}
 	}
 }

@@ -71,7 +71,7 @@ func (b *Builder) BuildSite() error {
 	// Generate the files and dirs for the content directory
 	dirsMap, err := b.walkContentDir()
 	if err != nil {
-		logger.Error("Error walking content directory: ", err)
+		global.log.Error("Error walking content directory: ", err)
 		return err
 	}
 
@@ -96,7 +96,8 @@ func (b *Builder) BuildSite() error {
 }
 
 // Set the root path and comomon directories for commands
-func (b *Builder) SetRootPath(path string) {
+func (b *Builder) SetRootPath() {
+	path := global.rootPath
 	if path == "" {
 		path = "."
 	}
@@ -115,7 +116,7 @@ func (b *Builder) walkContentDir() (map[string]DirectoryInfo, error) {
 	b.dirsMap = make(map[string]DirectoryInfo)
 
 	contentPath := filepath.Join(b.rootPath, b.contentDir)
-	logger.Detail("Walking content directory: " + contentPath)
+	global.log.Detail("Walking content directory: " + contentPath)
 
 	// Walk the content directory and build the files and dirs maps
 	// We update both maps as we walk the directory one time
@@ -124,7 +125,7 @@ func (b *Builder) walkContentDir() (map[string]DirectoryInfo, error) {
 			return fmt.Errorf("error accessing path %q: %v", path, err)
 		}
 
-		logger.Detail("Processing path: " + path)
+		global.log.Detail("Processing path: " + path)
 
 		// Check if this is a directory or a file
 		isDir, err := filesystem.IsDir(path)
@@ -324,10 +325,10 @@ func (b *Builder) renderAndWriteFile(outputPath string, file FileInfo) error {
 }
 
 func (b *Builder) buildIndexFiles(dirsMap map[string]DirectoryInfo) error {
-	logger.Info("Building index files")
+	global.log.Info("Building index files")
 	// Loop through each directory in dirsMap
 	for contentPath, dirInfo := range dirsMap {
-		logger.Detail("Processing directory: " + contentPath)
+		global.log.Detail("Processing directory: " + contentPath)
 		// If the directory does not have an index file, create one
 		if !dirInfo.HasIndex && dirInfo.NumFiles > 0 {
 
@@ -336,7 +337,7 @@ func (b *Builder) buildIndexFiles(dirsMap map[string]DirectoryInfo) error {
 			if contentType == "content" {
 				continue
 			}
-			logger.Detail("Building index file for " + contentType + "s")
+			global.log.Detail("Building index file for " + contentType + "s")
 
 			// Generate the list content for the index file
 			var listContent bytes.Buffer
@@ -356,7 +357,7 @@ func (b *Builder) buildIndexFiles(dirsMap map[string]DirectoryInfo) error {
 			// Execute the full page template with the built PageData
 			var output bytes.Buffer
 			if err := b.templates.ExecuteTemplate(&output, "fullpage.tmpl", pageData); err != nil {
-				logger.Error("Error executing template: ", err)
+				global.log.Error("Error executing template: ", err)
 				return err
 			}
 
@@ -364,7 +365,7 @@ func (b *Builder) buildIndexFiles(dirsMap map[string]DirectoryInfo) error {
 			// it with the output directory
 			trimmedPath := strings.TrimPrefix(dirInfo.Path, "content/")
 			outputPath := filepath.Join(b.outputDir, trimmedPath, "index.html")
-			logger.Detail("Writing index file to " + outputPath)
+			global.log.Detail("Writing index file to " + outputPath)
 
 			if err := filesystem.Create(outputPath, output.String()); err != nil {
 				return err
@@ -388,6 +389,7 @@ func (b *Builder) getTemplateContent(file FileInfo, templateFile string) (templa
 // Parse the templates and store them in a global variable
 func (b *Builder) initTemplates() error {
 	var err error
+	global.log.Detail("Parsing templates from %s", b.templateDir)
 	b.templates, err = template.ParseGlob(filepath.Join(b.templateDir, "*.tmpl"))
 	if err != nil {
 		return fmt.Errorf("failed to load templates: %w", err)
@@ -398,7 +400,7 @@ func (b *Builder) initTemplates() error {
 // deletes all files and directories in the output folder except the assets directory.
 // @TODO: this seems way too big and complex - find a better way to do this
 func (b *Builder) resetOutputDirectory() error {
-	logger.Info("Resetting output directory")
+	global.log.Info("Resetting output directory")
 	webDir := b.outputDir
 	assetsDir := filepath.Join(webDir, "assets")
 
@@ -448,7 +450,7 @@ func (b *Builder) resetOutputDirectory() error {
 		// Attempt to remove the directory (will fail if not empty)
 		err := os.Remove(dir)
 		if err != nil && !os.IsNotExist(err) {
-			logger.Warn("Failed to delete directory (may not be empty): %s", dir)
+			global.log.Warn("Failed to delete directory (may not be empty): %s", dir)
 			// Optionally, you can log the error or handle it as needed
 		}
 	}

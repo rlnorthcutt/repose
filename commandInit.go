@@ -32,8 +32,8 @@ func (i *Init) CreateNewProjectFiles(rootPath string) error {
 	}
 
 	// Create the project directory structure
-	logger.Info("Creating new project in %s", installDir)
-	logger.Detail("Creating directory structure...")
+	global.log.Info("Creating new project in %s", installDir)
+	global.log.Detail("Creating directory structure...")
 	dirs := []string{"content", "template", "web", "web/assets", "web/assets/css", "web/assets/js", "web/assets/img"}
 	for _, dir := range dirs {
 		dirPath := filepath.Join(rootPath, dir)
@@ -49,7 +49,7 @@ func (i *Init) CreateNewProjectFiles(rootPath string) error {
 
 	// Get the template constants and files names
 	files := i.getTemplateContents(config)
-	logger.Detail("Creating template files...")
+	global.log.Detail("Creating template files...")
 
 	// Loop over the files and create them
 	for _, f := range files {
@@ -60,7 +60,7 @@ func (i *Init) CreateNewProjectFiles(rootPath string) error {
 		}
 	}
 
-	logger.Success("Repose project created in %s", installDir)
+	global.log.Success("Repose project created in %s", installDir)
 
 	return nil
 }
