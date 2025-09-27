@@ -10,7 +10,7 @@ const ListTemplate_tailwind = `<!-- list.tmpl -->
 <article>
     <ul>
     {{ range .Files }}
-    <li><a href="{{ .OutputPath }}">{{ .MetaData.title }}</a></li>
+        {{ template "listitem.tmpl" . }}
     {{ end }}
     </ul>
 </article>
@@ -24,7 +24,7 @@ const PageTemplate_tailwind = `<!-- fullpage.tmpl -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <title>{{ .Title }}</title>
-    <link rel="stylesheet" href="/asset/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/styles.css">
 </head>
 <body>
     {{ template "header.tmpl" . }}
@@ -35,6 +35,10 @@ const PageTemplate_tailwind = `<!-- fullpage.tmpl -->
     {{ template "footer.tmpl" . }}
 </body>
 </html>
+`
+
+const ListItemTemplate_tailwind = `<!-- listitem.tmpl -->
+<li><a href="{{ .OutputPath }}">{{ .MetaData.title }}</a></li>
 `
 
 const HeaderTemplate_tailwind = `<!-- header.tmpl -->

@@ -10,7 +10,7 @@ const ListTemplate_pico = `<!-- list.tmpl -->
 <article>
     <ul>
     {{ range .Files }}
-    <li><a href="{{ .OutputPath }}">{{ .MetaData.title }}</a></li>
+        {{ template "listitem.tmpl" . }}
     {{ end }}
     </ul>
 </article>
@@ -24,7 +24,7 @@ const PageTemplate_pico = `<!-- fullpage.tmpl -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .Title }}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
-    <link rel="stylesheet" href="/asset/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/styles.css">
 </head>
 <body>
     {{ template "header.tmpl" . }}
@@ -34,6 +34,10 @@ const PageTemplate_pico = `<!-- fullpage.tmpl -->
     {{ template "footer.tmpl" . }}
 </body>
 </html>
+`
+
+const ListItemTemplate_pico = `<!-- listitem.tmpl -->
+<li><a href="{{ .OutputPath }}">{{ .MetaData.title }}</a></li>
 `
 
 const HeaderTemplate_pico = `<!-- header.tmpl -->

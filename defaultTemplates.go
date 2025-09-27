@@ -10,7 +10,7 @@ const ListTemplate_none = `<!-- list.tmpl -->
 <article>
     <ul>
     {{ range .Files }}
-    <li><a href="{{ .OutputPath }}">{{ .MetaData.title }}</a></li>
+        {{ template "listitem.tmpl" . }}
     {{ end }}
     </ul>
 </article>
@@ -23,7 +23,7 @@ const PageTemplate_none = `<!-- fullpage.tmpl -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .Title }}</title>
-    <link rel="stylesheet" href="/asset/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/styles.css">
 </head>
 <body>
     {{ template "header.tmpl" . }}
@@ -34,6 +34,10 @@ const PageTemplate_none = `<!-- fullpage.tmpl -->
     {{ template "footer.tmpl" . }}
 </body>
 </html>
+`
+
+const ListItemTemplate_none = `<!-- listitem.tmpl -->
+<li><a href="{{ .OutputPath }}">{{ .MetaData.title }}</a></li>
 `
 
 const HeaderTemplate_none = `<!-- header.tmpl -->
