@@ -12,6 +12,8 @@ import (
 	"github.com/yuin/goldmark"
 	meta "github.com/yuin/goldmark-meta"
 	"github.com/yuin/goldmark/parser"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // Controls the build command
@@ -26,6 +28,11 @@ type Builder struct {
 
 // Defining a global varaiable for build command
 var buildCommand Builder
+
+var (
+	titleCaser    = cases.Title(language.English)
+	titleReplacer = strings.NewReplacer("-", " ", "_", " ")
+)
 
 // Holds information about a directory during processing
 // Keyed by the full path to the directory
@@ -291,10 +298,40 @@ func (b *Builder) processMarkdown(filePath string) (htmlContent string, metaData
 // Render the HTML content with the template and write to the output directory
 func (b *Builder) renderAndWriteFile(outputPath string, file FileInfo) error {
 	// Extract the template name from outputPath or set a default
-	templateFile := file.MetaData["template"].(string)
-	if templateFile == "" {
-		templateFile = "default.tmpl"
+	templateFile := "default.tmpl"
+	if file.MetaData == nil {
+		file.MetaData = make(map[string]interface{})
 	}
+
+	if rawTemplate, exists := file.MetaData["template"]; exists {
+		if tmpl, ok := rawTemplate.(string); ok {
+			tmpl = strings.TrimSpace(tmpl)
+			if tmpl != "" {
+				templateFile = tmpl
+			} else {
+				logger.Warn("Template metadata for %s is empty; using default.tmpl", file.Path)
+			}
+		} else {
+			logger.Warn("Template metadata for %s must be a string; using default.tmpl", file.Path)
+		}
+	}
+
+	file.MetaData["template"] = templateFile
+
+	title := deriveTitle(file)
+	if rawTitle, exists := file.MetaData["title"]; exists {
+		if titleStr, ok := rawTitle.(string); ok {
+			cleanedTitle := strings.TrimSpace(titleStr)
+			if cleanedTitle != "" {
+				title = cleanedTitle
+			} else {
+				logger.Warn("Title metadata for %s is empty; deriving from filename", file.Path)
+			}
+		} else {
+			logger.Warn("Title metadata for %s must be a string; deriving from filename", file.Path)
+		}
+	}
+	file.MetaData["title"] = title
 
 	// Process the MD content with the template
 	// This will be used to process the full page from the template
@@ -307,7 +344,7 @@ func (b *Builder) renderAndWriteFile(outputPath string, file FileInfo) error {
 	pageData := PageData{
 		SiteName: config.Sitename,
 		Logo:     logo50,
-		Title:    file.MetaData["title"].(string),
+		Title:    title,
 		Content:  template.HTML(templateContent),
 		Metadata: file.MetaData,
 	}
@@ -383,6 +420,21 @@ func (b *Builder) getTemplateContent(file FileInfo, templateFile string) (templa
 	}
 
 	return template.HTML(tmplContent.String()), nil
+}
+
+func deriveTitle(file FileInfo) string {
+	cleaned := strings.TrimSpace(file.Name)
+	if cleaned == "" {
+		return "Untitled"
+	}
+
+	cleaned = titleReplacer.Replace(cleaned)
+	cleaned = strings.Join(strings.Fields(cleaned), " ")
+	if cleaned == "" {
+		return "Untitled"
+	}
+
+	return titleCaser.String(cleaned)
 }
 
 // Parse the templates and store them in a global variable

@@ -10,7 +10,7 @@ const ListTemplate_bootstrap = `<!-- list.tmpl -->
 <article>
     <ul>
     {{ range .Files }}
-    <li><a href="{{ .OutputPath }}">{{ .MetaData.title }}</a></li>
+        {{ template "listitem.tmpl" . }}
     {{ end }}
     </ul>
 </article>
@@ -25,7 +25,7 @@ const PageTemplate_bootstrap = `<!-- fullpage.tmpl -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <title>{{ .Title }}</title>
-    <link rel="stylesheet" href="/asset/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/styles.css">
 </head>
 <body>
     {{ template "header.tmpl" . }}
@@ -35,6 +35,10 @@ const PageTemplate_bootstrap = `<!-- fullpage.tmpl -->
     {{ template "footer.tmpl" . }}
 </body>
 </html>
+`
+
+const ListItemTemplate_bootstrap = `<!-- listitem.tmpl -->
+<li><a href="{{ .OutputPath }}">{{ .MetaData.title }}</a></li>
 `
 
 const HeaderTemplate_bootstrap = `<!-- header.tmpl -->

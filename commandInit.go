@@ -83,6 +83,7 @@ func (i *Init) getTemplateContents(config Config) []FileContent {
 			"navigation": NavigationTemplate_pico,
 			"footer":     FooterTemplate_pico,
 			"list":       ListTemplate_pico,
+			"listitem":   ListItemTemplate_pico,
 			"css":        css_pico,
 		},
 		"bootstrap": {
@@ -92,6 +93,7 @@ func (i *Init) getTemplateContents(config Config) []FileContent {
 			"navigation": NavigationTemplate_bootstrap,
 			"footer":     FooterTemplate_bootstrap,
 			"list":       ListTemplate_bootstrap,
+			"listitem":   ListItemTemplate_bootstrap,
 			"css":        css_bootstrap,
 		},
 		"tailwind": {
@@ -101,6 +103,7 @@ func (i *Init) getTemplateContents(config Config) []FileContent {
 			"navigation": NavigationTemplate_tailwind,
 			"footer":     FooterTemplate_tailwind,
 			"list":       ListTemplate_tailwind,
+			"listitem":   ListItemTemplate_tailwind,
 			"css":        css_tailwind,
 		},
 		"none": {
@@ -110,6 +113,7 @@ func (i *Init) getTemplateContents(config Config) []FileContent {
 			"navigation": NavigationTemplate_none,
 			"footer":     FooterTemplate_none,
 			"list":       ListTemplate_none,
+			"listitem":   ListItemTemplate_none,
 			"css":        css_none,
 		},
 	}
@@ -128,7 +132,7 @@ func (i *Init) getTemplateContents(config Config) []FileContent {
 		{"template/listitem.tmpl", themeTemplates["listitem"]},
 		{"content/index.md", indexMD},
 		{"content/test.md", MarkdownTest},
-		{"web/asset/css/styles.css", themeTemplates["css"]},
+		{"web/assets/css/styles.css", themeTemplates["css"]},
 	}
 
 	return files

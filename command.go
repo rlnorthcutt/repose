@@ -51,16 +51,16 @@ func (c *Command) Init() string {
 // It requires two arguments: content type and filename.
 // The content type defines the path, so it can also include a subfolder
 func (c *Command) New(config Config) {
-	if len(os.Args) < 4 {
+	if len(c.Args) < 3 {
 		logger.Warn("Missing arguments. Usage: repose new [CONTENTTYPE] [FILENAME]")
 		return
-	} else if len(os.Args) > 4 {
+	} else if len(c.Args) > 3 {
 		logger.Warn("File name cannot contain spaces. Usage: repose new [CONTENTTYPE] [FILENAME]")
 		return
 	}
 
-	typeDirectory := os.Args[2]
-	fileNameParam := os.Args[3]
+	typeDirectory := c.Args[1]
+	fileNameParam := c.Args[2]
 
 	if err := c.createNewContent(config, typeDirectory, fileNameParam); err != nil {
 		logger.Error(err.Error())
